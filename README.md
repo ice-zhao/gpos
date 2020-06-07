@@ -1,2 +1,2 @@
-# yaos
-Yet Another Operating System
+# gpos
+build up a new Operating System from scratch.
