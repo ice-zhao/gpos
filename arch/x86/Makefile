@@ -10,7 +10,7 @@ floppy=$(PWD)/../../bootloader/x86/floppy
 
 ASMKFLAGS	= -I include/ -I $(ARCHINCLUDE)
 
-all: clean kernel.bin install
+all:  kernel.bin
 
 asm/head.o: asm/head.S
 	$(CC) $(ASMKFLAGS) -c $< -o $@

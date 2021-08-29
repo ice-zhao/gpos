@@ -12,7 +12,7 @@ ASMKFLAGS	= -I include/ -I $(ARCHINCLUDE)
 
 
 
-all: clean boot.img loader.bin install
+all:  boot.bin loader.bin
 
 #compile boot.S and write to boot sector of Floppy
 boot.o: boot.S include/load.inc include/fat12hdr.inc
@@ -38,7 +38,7 @@ loader.bin: loader.elf
 	$(OBJCOPY) -R .pdr -R .comment -R .note -S -O binary loader.elf loader.bin
 
 
-install: loader.bin
+install: boot.img loader.bin
 	sudo mount $(FDIMAGE) $(PWD)/floppy
 	sudo cp -rf loader.bin $(PWD)/floppy
 	sudo umount $(PWD)/floppy

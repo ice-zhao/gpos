@@ -20,6 +20,61 @@ LABEL_START:
     mov     $0x184f,%dx   /* Bottom right: (80,50) */
     int     $0x10         /* BIOS int 10h, ah=6: Initialize screen */
 
+#get current cursor position and save it
+	mov	$BaseOfLoader, %ax	#base address of machine data
+	mov	%ax, %ds
+	mov	$0x03, %ah	# read cursor pos
+	xor	%bh, %bh
+	int	$0x10		# save it in known place, con_init fetches
+	mov	%dx, %ds:0	# it from 0x90000.
+
+# Get memory size (extended mem, kB)
+	mov	$0x88, %ah
+	int	$0x15
+	mov	%ax, %ds:2
+
+# Get video-card data:
+	mov	$0x0f, %ah
+	int	$0x10
+	mov	%bx, %ds:4	# bh = display page
+	mov	%ax, %ds:6	# al = video mode, ah = window width
+
+# check for EGA/VGA and some config parameters
+	mov	$0x12, %ah
+	mov	$0x10, %bl
+	int	$0x10
+	mov	%ax, %ds:8
+	mov	%bx, %ds:10
+	mov	%cx, %ds:12
+
+
+# Get hd0 data
+    push %ds
+    push %es
+    mov	$0x0000, %ax
+	mov	%ax, %ds
+	lds	%ds:4*0x41, %si
+	mov	$BaseOfLoader, %ax
+	mov	%ax, %es
+	mov	$0x0080, %di
+	mov	$0x10, %cx
+	rep
+	movsb
+
+# Get hd1 data
+	mov	$0x0000, %ax
+	mov	%ax, %ds
+	lds	%ds:4*0x46, %si
+	mov	$BaseOfLoader, %ax
+	mov	%ax, %es
+	mov	$0x0090, %di
+	mov	$0x10, %cx
+	rep
+	movsb
+    pop %es
+    pop %ds
+
+
     /* show loading string */
     mov $0, %dh
     call DispStrRealMode
