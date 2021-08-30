@@ -6,6 +6,7 @@
 *.ko
 *.obj
 *.elf
+*.bin
 
 # Linker output
 *.ilk
@@ -58,4 +59,3 @@ utils/grub-2.06.tar.xz
 utils/grub-2.06/
 utils/hd.img
 utils/info
-bootloader/x86/*.bin

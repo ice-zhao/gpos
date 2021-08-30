@@ -10,15 +10,19 @@ floppy=$(PWD)/../../bootloader/x86/floppy
 
 ASMKFLAGS	= -I include/ -I $(ARCHINCLUDE)
 
+include asm/include/Makefile
+
 all:  kernel.bin
 
 asm/head.o: asm/head.S
 	$(CC) $(ASMKFLAGS) -c $< -o $@
 
-asm/head.elf: asm/head.o
-	$(LD) -T$(KERNELLD) $< -o $@
+asm/kernel.elf: asm/head.o
+	$(LD) -T$(KERNELLD) $(LDFLAGS) $< -o $@
+	$(Q)nm $@ | grep -v '\(compiled\)\|\(\.o$$\)\|\( [aU] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)'| sort > kernel.map
 
-kernel.bin: asm/head.elf
+
+kernel.bin: asm/kernel.elf
 	$(OBJCOPY) -R .pdr -R .comment -R .note -S -O binary $< $@
 
 
@@ -28,4 +32,4 @@ install: kernel.bin
 	sudo umount $(floppy)
 
 clean:
-	rm -rf asm/head.o asm/head.elf kernel.bin
+	rm -rf asm/head.o asm/kernel.elf kernel.bin

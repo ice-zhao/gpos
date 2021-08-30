@@ -1,6 +1,7 @@
 SECTIONS
 {
     . = 0x0;
+    _start_kernel = .;
     .text :
     {
         _ftext = .;
@@ -9,4 +10,7 @@ SECTIONS
     .data :
     {
     } = 0
+
+    _end_kernel=ALIGN(4k);
+    /*dynamic allocation page structure at the end of kernel*/
 }
