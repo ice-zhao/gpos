@@ -33,10 +33,11 @@ loader.o: loader.S $(ARCHINCLUDE)/pm.inc include/fat12hdr.inc include/load.inc
 
 loader.elf: loader.o
 	$(LD) -o loader.elf -T$(LOADERLDFILE) loader.o
+	$(Q)nm $@ | grep -v '\(compiled\)\|\(\.o$$\)\|\( [aU] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)'| sort > loader.map
+
 
 loader.bin: loader.elf
 	$(OBJCOPY) -R .pdr -R .comment -R .note -S -O binary loader.elf loader.bin
-
 
 install: boot.img loader.bin
 	sudo mount $(FDIMAGE) $(PWD)/floppy

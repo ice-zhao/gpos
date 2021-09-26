@@ -51,6 +51,8 @@ _start:
 
 	call setup_idt
 
+#    int 0x80
+
 #    pushl $int_msg
 #    call iprintk
 #    add $4, %esp

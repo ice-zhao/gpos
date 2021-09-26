@@ -34,11 +34,7 @@ _start:
     mov $0, %sp
 
     /* Clear screen */
-    mov     $0x0600,%ax   /* %ah=6, %al=0 */
-    mov     $0x0700,%bx   /* Black white */
-    mov     $0,%cx        /* Top left: (0,0) */
-    mov     $0x184f,%dx   /* Bottom right: (80,50) */
-    int     $0x10         /* BIOS int 10h, ah=6: Initialize screen */
+    call clear_screen
 
     /* show loading string */
     mov $0, %dh
@@ -174,6 +170,7 @@ LABEL_FILE_LOADED:
 .MemChkFail:
 .MemChkOk:
 
+
 # Get video-card data:
 	mov	$0x0f, %ah
 	int	$0x10
@@ -215,6 +212,8 @@ LABEL_FILE_LOADED:
     pop %es
     pop %ds
 
+    call clear_screen
+
 /*move kernel to address 0x0*/
     push %es
     push %ds
@@ -237,7 +236,7 @@ end_move:
     pop %ds
     pop %es
 
-    #enter protected mode
+#enter protected mode
     lgdtl GdtPtr
 
     /* enable A20 */
@@ -280,21 +279,203 @@ end_move:
 /*******************************************************************
    Jump to KERNEL.BIN's start address in memory.
 */
-    ljmpl     $SelectorFlatC,$(OffsetOfKernel)
-#    ljmpl     $SelectorFlatC,$(LOADER_PHY_ADDR + LABEL_TEST)
+    ljmpl     $SelectorFlatC,$(LOADER_PHY_ADDR + LABEL_START)
 /*******************************************************************/
 
     .code32
     .section .text
-LABEL_TEST:
+LABEL_START:
+    mov $SelectorFlatRW, %ax
+    mov %ax, %ds
+    mov %ax, %es
+    mov %ax, %fs
+    mov %ax, %ss
+    mov $0x90000, %esp
+
     mov $SelectorVideo, %ax
     mov %ax, %gs
-    movl $((80 * 11 + 0) * 2), %edi
+
+    movl $((80 * 10 + 0) * 2), %edi
     movb $0xC, %ah /* 0000: Black Back 1100: Red Front */
     movb $'L', %al
     mov %ax, %gs:(%edi)
 
-    jmp .
+#show memory layout of installed.
+    call DispMemInfo
+
+    ljmpl     $SelectorFlatC,$(OffsetOfKernel)
+
+DispMemInfo:
+    pushl %esi
+    pushl %edi
+    pushl %ecx
+
+    pushl $szMemChkTitle
+    call DispStr
+    add $4, %esp
+
+    movl $MemChkBuf, %esi
+    movl (dwMCRNumber), %ecx   #total of ARDS(Address Range Descriptor Structure)
+.loop:
+    mov $5, %edx    #every ARDS has 5 part
+    movl $ARDStruct, %edi      #pointer to ARDS temp storage buffer
+.part1:
+    pushl (%esi)
+    call DispInt
+
+    popl %eax   #store to _ARDStruct, a temp storage buffer
+    stosl
+    add $4, %esi
+    dec %edx
+    cmp $0, %edx
+    jnz .part1
+	call	DispReturn		#printf("\n");
+    cmp $1, (dwType)
+    jne .part2
+    movl (dwBaseAddrLow), %eax
+    addl (dwLengthLow), %eax
+    cmp (dwMemSize), %eax
+    jb .part2
+    movl %eax, (dwMemSize)
+.part2:
+    loop .loop
+
+   	call	DispReturn		#printf("\n");
+    pushl $szRAMSize
+    call DispStr
+    add $4, %esp
+
+    pushl (dwMemSize)
+    call DispInt
+    add $4, %esp
+
+    popl %ecx
+    popl %edi
+    popl %esi
+    ret
+
+
+# ------------------------------------------------------------------------
+# 换行
+# ------------------------------------------------------------------------
+DispReturn:
+	push	$szReturn
+	call	DispStr			#printf("\n");
+    add $4, %esp
+	ret
+# DispReturn 结束---------------------------------------------------------
+
+#display a string that end with 0
+DispStr:
+    push %ebp
+    mov %esp, %ebp
+    push %ebx
+    push %esi
+    push %edi
+
+    mov 8(%ebp), %esi
+    movl (cursor_pos), %edi
+    mov $0x0F, %ah      #gray color
+.1:
+    lodsb
+    test %al, %al
+    jz .2
+    cmp $0xA, %al       #carriage return
+    jnz .3
+    pushl %eax
+    movl %edi, %eax
+    mov $160, %bl
+    div %bl
+    and $0xFF, %eax
+    inc %eax
+    mov $160, %bl
+    mul %bl
+    movl %eax, %edi
+    popl %eax
+    jmp .1
+.3:
+    movw %ax, %gs:(%edi)
+    add $2, %edi
+    jmp .1
+.2:
+    movl %edi, (cursor_pos)
+
+    pop %edi
+    pop %esi
+    pop %ebx
+    pop %ebp
+    ret
+
+#show an integer number
+DispInt:
+    movl 4(%esp), %eax
+    shr $24, %eax
+    call DispAL
+
+    movl 4(%esp), %eax
+    shr $16, %eax
+    call DispAL
+
+    movl 4(%esp), %eax
+    shr $8, %eax
+    call DispAL
+
+    movl 4(%esp), %eax
+    call DispAL
+
+    mov $0x07, %ah  #0000b: black background, 0111b gray char
+    mov $'h', %al
+    push %edi
+    movl (cursor_pos), %edi
+    movw %ax, %gs:(%edi)
+    add $4, %edi
+    movl %edi, (cursor_pos)
+    pop %edi
+    ret
+
+#show %al's number
+DispAL:
+    pushl %ecx
+    pushl %edx
+    pushl %edi
+
+    movl (cursor_pos), %edi
+    mov $0x0F, %ah  #0000: black background, 1111b: white word
+    mov %al, %dl
+    shr $4, %al
+    mov $2, %ecx
+.begin:
+    and $0x0F, %al
+    cmp $9, %al
+    ja .1st
+    add $'0', %al
+    jmp .2nd
+.1st:
+    sub $0xA, %al
+    add $'A', %al
+.2nd:
+    movw %ax, %gs:(%edi)
+    add $2, %edi
+
+    mov %dl, %al
+    loop .begin
+
+    movl %edi, (cursor_pos)
+
+    popl %edi
+    popl %edx
+    popl %ecx
+
+    ret     #the end of DispAL
+
+    .section .data
+_szMemChkTitle:		.asciz	"BaseAddrL BaseAddrH LengthLow LengthHigh  Type\n"
+	.equ szMemChkTitle,	LOADER_PHY_ADDR + _szMemChkTitle
+_cursor_pos:
+    .4byte (80 * 0 + 0) * 2   # at 0 line, 0 column
+    .equ   cursor_pos, (LOADER_PHY_ADDR + _cursor_pos)
+
+#32bit code end
 
     .code16
 FAST_ENABLE_A20LINE:
@@ -304,6 +485,13 @@ FAST_ENABLE_A20LINE:
     outb %al, $0x92
     pop %ax
     ret
+
+clear_screen:
+	    mov     $0x0600,%ax   /* %ah=6, %al=0 */
+	    mov     $0x0700,%bx   /* Black white */
+	    mov     $0,%cx        /* Top left: (0,0) */
+	    mov     $0x184f,%dx   /* Bottom right: (80,50) */
+	    int     $0x10         /* BIOS int 10h, ah=6: Initialize screen */
 
 /* ==================================================================
    Routine: GetFATEntry
@@ -423,4 +611,28 @@ wRootDirSizeForLoop:    .2byte  RootDirSectors /* 14 */
 wSectorNo:              .2byte  0       /* Sector number to read */
 bOdd:                   .byte   0       /* odd or even? */
 _dwMCRNumber:           .4byte  0
+	    	.equ 	dwMCRNumber,	LOADER_PHY_ADDR + _dwMCRNumber
+
 _MemChkBuf:             .fill 256, 1, 0
+    	.equ 	MemChkBuf,	LOADER_PHY_ADDR + _MemChkBuf
+
+_ARDStruct:
+   	_dwBaseAddrLow:		.4byte	0
+	_dwBaseAddrHigh:	.4byte	0
+	_dwLengthLow:		.4byte	0
+	_dwLengthHigh:		.4byte	0
+	_dwType:            .4byte	0
+	.equ   	ARDStruct,	LOADER_PHY_ADDR + _ARDStruct
+   	.equ   	dwBaseAddrLow,	LOADER_PHY_ADDR + _dwBaseAddrLow
+	.equ   	dwBaseAddrHigh,	LOADER_PHY_ADDR + _dwBaseAddrHigh
+	.equ   	dwLengthLow,	LOADER_PHY_ADDR + _dwLengthLow
+	.equ   	dwLengthHigh,	LOADER_PHY_ADDR + _dwLengthHigh
+	.equ   	dwType,	LOADER_PHY_ADDR + _dwType
+
+_dwMemSize:			.4byte	0
+	.equ   	dwMemSize,	LOADER_PHY_ADDR + _dwMemSize
+_szRAMSize:			.asciz	"RAM size: "
+	.equ   	szRAMSize,	LOADER_PHY_ADDR + _szRAMSize
+
+_szReturn:			.asciz  "\n"
+	.equ 	szReturn,	LOADER_PHY_ADDR + _szReturn
