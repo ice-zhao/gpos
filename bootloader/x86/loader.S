@@ -306,6 +306,7 @@ LABEL_START:
     ljmpl     $SelectorFlatC,$(OffsetOfKernel)
 
 DispMemInfo:
+    pushl %edx
     pushl %esi
     pushl %edi
     pushl %ecx
@@ -349,9 +350,16 @@ DispMemInfo:
     call DispInt
     add $4, %esp
 
+    xor %edx, %edx          #store memory size to machine data area in KB unit
+    movl (dwMemSize), %eax
+    movl $1024, %ecx
+    div %ecx
+    movl %eax, (memory_size_addr)
+
     popl %ecx
     popl %edi
     popl %esi
+    popl %edx
     ret
 
 

@@ -4,6 +4,7 @@
     .global iprintk, _start_kernel,_end_kernel
 	jmp _start
     .include "pm.inc"
+    .include "machine.inc"
 
 /* GDT ------------------------------------------------------------------------------------------------------------------------------------------------------------
                                             段基址            段界    , 属性 */
@@ -50,6 +51,7 @@ _start:
     lgdtl GdtPtr
 
 	call setup_idt
+    call setup_paging
 
 #    int 0x80
 
@@ -62,10 +64,66 @@ _start:
     movb $'K', %al
     mov %ax, %gs:(%edi)
 
-setup_paging:
-    movl $_end_kernel, %eax
-	 /* Stop here, infinite loop. */
+   	 /* Stop here, infinite loop. */
 	jmp .
+
+setup_paging:
+    xor %edx, %edx      #calculate the number of pages are used for page table
+    movl (memory_size_addr), %eax   #memory size in KB
+    movl $1024, %ecx
+    divl %ecx
+    cmp $0, %edx
+    je .calcuate_pages
+    inc %eax        #memory size in MB
+.calcuate_pages:
+    xor %edx, %edx
+    movl $4, %ecx       #4 means 4M, every page table can address 4M space.
+    divl %ecx       #now eax contains the number of pages needed for page table
+    inc %eax    #add one page for page directory
+
+    movl %eax, (paging_frames)  #eax contains the number of page frames. pages*4K/4Btye
+    movl $1024, %ecx        #allocate pages at the end of kernel and initialize them to zero
+    mull %ecx       #edx:eax
+    movl %eax, %ecx
+    movl $_end_kernel, %edi
+    xor %eax, %eax
+    cld
+    rep
+    stosl
+
+    movl $_end_kernel, %edi     #init page directory table
+    movl %edi, (paging_addr)    #save paging address to machine data area
+    movl (paging_frames), %ecx
+    dec %ecx    #minus one page that used for page directory table
+    movl $(_end_kernel + PG_P +  PG_USU + PG_RWW), %eax
+1:  add $4096, %eax
+    movl %eax, (%edi)
+    add $4, %edi
+    dec %ecx
+    jnz 1b
+
+    movl $(_end_kernel + 4096), %edi    #init page tables
+    movl (paging_frames), %eax
+    dec %eax    #the number of page tables
+    xor %edx, %edx
+    mov $1024, %ecx
+    mull %ecx
+    movl %eax, %ecx #ecx contains the number of double word to init
+    movl $(PG_P + PG_USU + PG_RWW), %eax
+2:  movl %eax, (%edi)
+    add $4, %edi
+    add $4096, %eax
+    dec %ecx
+    jnz 2b
+
+    movl (paging_addr), %eax    #enable paging
+    movl %eax, %cr3
+    movl %cr0, %eax
+    orl $0x80000000, %eax
+    movl %eax, %cr0
+    nop  #give cpu a very little bit delay to take paging effect
+    ret
+
 
 /* This is the default interrupt "handler" :-) */
 _int_msg:
@@ -85,7 +143,7 @@ ignore_int:
 	mov %ax,%fs
 	pushl $int_msg
 	call iprintk
-	popl %eax
+	add $4, %esp
 	pop %fs
 	pop %es
 	pop %ds
@@ -112,12 +170,12 @@ iprintk:
     movl (%eax), %edi       #load cursor position
     movb $0xF, %ah          #charactor color
 
-.1:
+1:
     lodsb
     test %al, %al       #get string's end char 0?
-    jz .2
+    jz 2f
     cmp $0xA, %al       #is an enter?
-    jnz .3
+    jnz 3f
     pushl %eax
     movl %edi, %eax
     mov $160, %bl
@@ -128,12 +186,12 @@ iprintk:
     mul %bl
     movl %eax, %edi
     popl %eax
-    jmp .1
-.3:
+    jmp 1b
+3:
     movw %ax, %gs:(%edi)
     add $2, %edi
-    jmp .1
-.2:
+    jmp 1b
+2:
 	movl $cursor_pos, %eax
     movl %edi, (%eax)        #save cursor current position
 

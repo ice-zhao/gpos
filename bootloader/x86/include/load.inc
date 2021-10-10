@@ -6,3 +6,7 @@
 .equ    BaseOfKernel,       0x1000
 .equ    OffsetOfKernel,     0x0
 
+
+#machine data
+.equ    memory_size_offset,    0x200
+.equ    memory_size_addr,   (LOADER_PHY_ADDR + memory_size_offset)
