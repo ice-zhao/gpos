@@ -1,0 +1,1 @@
+void iprintk(char *str);

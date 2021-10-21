@@ -1,3 +1,7 @@
+.equ    BaseOfKernel,       0x0
+.equ    OffsetOfKernel,     0x0
+.equ    KERNEL_PHY_ADDR,    (BaseOfKernel * 0x10)
+
 .equ    BaseOfLoader,     0x9000
 .equ    LOADER_PHY_ADDR,    (BaseOfLoader * 0x10)
 

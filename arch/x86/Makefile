@@ -8,17 +8,23 @@ FDIMAGE=$(PWD)/../../utils/gpos.img
 ARCHINCLUDE=$(PWD)/asm/include
 floppy=$(PWD)/../../bootloader/x86/floppy
 
-ASMKFLAGS	= -I include/ -I $(ARCHINCLUDE)
+ASMKFLAGS	= -I include/ -I $(ARCHINCLUDE) -m32
 
 include asm/include/Makefile
 
 all:  kernel.bin
 
-asm/head.o: asm/head.S
-	$(CC) $(ASMKFLAGS) -c $< -o $@
+asm/iprintk.o: asm/iprintk.S
+	$(CC) $(ASMKFLAGS) -o $@ -c $^
 
-asm/kernel.elf: asm/head.o
-	$(LD) -T$(KERNELLD) $(LDFLAGS) $< -o $@
+main.o: main.c
+	$(CC) $(CFLAGS) -o $@ -c $^
+
+asm/head.o: asm/head.S
+	$(CC) $(ASMKFLAGS) -o $@ -c $^
+
+asm/kernel.elf: asm/head.o asm/iprintk.o main.o
+	$(LD) -T$(KERNELLD) $(LDFLAGS) -o $@ $^
 	$(Q)nm $@ | grep -v '\(compiled\)\|\(\.o$$\)\|\( [aU] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)'| sort > kernel.map
 
 
@@ -32,4 +38,4 @@ install: kernel.bin
 	sudo umount $(floppy)
 
 clean:
-	rm -rf asm/head.o asm/kernel.elf kernel.bin
+	rm -rf asm/head.o asm/kernel.elf kernel.bin asm/iprintk.o main.o

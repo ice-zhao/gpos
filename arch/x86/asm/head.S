@@ -31,11 +31,11 @@ idt_descr:
 	.4byte (idt + KERNEL_PHY_ADDR)           # idt base phy address
 
 idt:	.fill 256,8,0		# idt is uninitialized
-
+/*
 _cursor_pos:
     .4byte (80 * 7 + 0) * 2   # at 7th line, 0 column
     .equ   cursor_pos, (KERNEL_PHY_ADDR + _cursor_pos)
-
+*/
 
 
 _start:
@@ -64,8 +64,9 @@ _start:
     movb $'K', %al
     mov %ax, %gs:(%edi)
 
-   	 /* Stop here, infinite loop. */
-	jmp .
+    pushl $main
+    ret
+    hlt     #never come here
 
 setup_paging:
     xor %edx, %edx      #calculate the number of pages are used for page table
@@ -157,7 +158,7 @@ ignore_int:
     void iprintk(char* str)
 parameter:
     str:  the pointer of string to output
-*/
+
 iprintk:
     pushl %ebp
     movl %esp, %ebp
@@ -201,7 +202,7 @@ iprintk:
     popl %ebp
     ret
 
-
+*/
 /*
  *  setup_idt
  *
@@ -235,11 +236,11 @@ rp_sidt:
 	jne rp_sidt
     lidtl idt_descr
 	    ret
-
+/*
 .equ    BaseOfKernel,       0x0
 .equ    OffsetOfKernel,     0x0
 .equ    KERNEL_PHY_ADDR,    (BaseOfKernel * 0x10)
-
+*/
     .section .kernel_end
 kernel_end_flag:
 	    .4byte  0xdeadbeef
