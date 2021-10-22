@@ -60,3 +60,8 @@ utils/grub-2.06/
 utils/hd.img
 utils/info
 bootloader/x86/.loader.map.swp
+GPATH
+GRTAGS
+GTAGS
+TAGS
+tags

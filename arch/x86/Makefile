@@ -11,8 +11,20 @@ floppy=$(PWD)/../../bootloader/x86/floppy
 ASMKFLAGS	= -I include/ -I $(ARCHINCLUDE) -m32
 
 include asm/include/Makefile
+output := $(BASE)
+output-kernel := $(output)/kernel
+output-mm := $(output)/mm
+
+CFLAGS += -I $(BASE)/arch/$(ARCH)/ -I $(BASE)/include/
 
 all:  kernel.bin
+
+objs-kernel := $(output-kernel)/schedule.o
+objs-mm := $(output-mm)/heap.o
+objs := asm/iprintk.o bss.o main.o
+
+bss.o: bss.c
+	$(CC) $(CFLAGS) -o $@ -c $^
 
 asm/iprintk.o: asm/iprintk.S
 	$(CC) $(ASMKFLAGS) -o $@ -c $^
@@ -23,8 +35,8 @@ main.o: main.c
 asm/head.o: asm/head.S
 	$(CC) $(ASMKFLAGS) -o $@ -c $^
 
-asm/kernel.elf: asm/head.o asm/iprintk.o main.o
-	$(LD) -T$(KERNELLD) $(LDFLAGS) -o $@ $^
+asm/kernel.elf: asm/head.o $(objs) $(objs-kernel) $(objs-mm)
+	$(LD) -T$(KERNELLD) $(LDFLAGS) $^ -o $@
 	$(Q)nm $@ | grep -v '\(compiled\)\|\(\.o$$\)\|\( [aU] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)'| sort > kernel.map
 
 
@@ -38,4 +50,4 @@ install: kernel.bin
 	sudo umount $(floppy)
 
 clean:
-	rm -rf asm/head.o asm/kernel.elf kernel.bin asm/iprintk.o main.o
+	rm -rf asm/kernel.elf kernel.bin asm/head.o $(objs)

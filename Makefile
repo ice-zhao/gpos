@@ -1,14 +1,22 @@
-CC=gcc
+CC := gcc
+ARCH := x86
+DEST := arch/$(ARCH)
+BASE := $(PWD)
 
+export BASE DEST ARCH CC
+
+include arch/$(ARCH)/asm/include/Makefile
 
 all: bootloader kernel
 
 
 bootloader:
-	make all -C ./bootloader/x86
+	$(Q)make all -C ./bootloader/x86
 
 
 kernel:
+	make all -C ./kernel
+	make all -C ./mm
 	make all -C ./arch/x86
 
 install: install_bootloader install_kernel
@@ -21,7 +29,9 @@ install_bootloader: bootloader
 
 
 clean:
-	make clean -C ./bootloader/x86
+	$(Q)make clean -C ./bootloader/x86
+	make clean -C ./mm
+	make clean -C ./kernel
 	make clean -C ./arch/x86
 
 .PHONY: bootloader kernel install clean install_kernel install_bootloader

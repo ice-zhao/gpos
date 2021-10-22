@@ -5,7 +5,7 @@
 	jmp _start
     .include "pm.inc"
     .include "machine.inc"
-
+    .align 8
 /* GDT ------------------------------------------------------------------------------------------------------------------------------------------------------------
                                             段基址            段界    , 属性 */
 gdt:
@@ -31,12 +31,6 @@ idt_descr:
 	.4byte (idt + KERNEL_PHY_ADDR)           # idt base phy address
 
 idt:	.fill 256,8,0		# idt is uninitialized
-/*
-_cursor_pos:
-    .4byte (80 * 7 + 0) * 2   # at 7th line, 0 column
-    .equ   cursor_pos, (KERNEL_PHY_ADDR + _cursor_pos)
-*/
-
 
 _start:
     mov $SelectorFlatRW, %ax
@@ -155,55 +149,6 @@ ignore_int:
 
 
 /*
-    void iprintk(char* str)
-parameter:
-    str:  the pointer of string to output
-
-iprintk:
-    pushl %ebp
-    movl %esp, %ebp
-    pushl %ebx
-    pushl %esi
-    pushl %edi
-
-    movl 8(%ebp), %esi
-    movl $cursor_pos, %eax
-    movl (%eax), %edi       #load cursor position
-    movb $0xF, %ah          #charactor color
-
-1:
-    lodsb
-    test %al, %al       #get string's end char 0?
-    jz 2f
-    cmp $0xA, %al       #is an enter?
-    jnz 3f
-    pushl %eax
-    movl %edi, %eax
-    mov $160, %bl
-    div %bl
-    and $0xFF, %eax
-    inc %eax
-    mov $160, %bl
-    mul %bl
-    movl %eax, %edi
-    popl %eax
-    jmp 1b
-3:
-    movw %ax, %gs:(%edi)
-    add $2, %edi
-    jmp 1b
-2:
-	movl $cursor_pos, %eax
-    movl %edi, (%eax)        #save cursor current position
-
-    popl %edi
-    popl %esi
-    popl %ebx
-    popl %ebp
-    ret
-
-*/
-/*
  *  setup_idt
  *
  *  sets up a idt with 256 entries pointing to
@@ -236,11 +181,7 @@ rp_sidt:
 	jne rp_sidt
     lidtl idt_descr
 	    ret
-/*
-.equ    BaseOfKernel,       0x0
-.equ    OffsetOfKernel,     0x0
-.equ    KERNEL_PHY_ADDR,    (BaseOfKernel * 0x10)
-*/
+
     .section .kernel_end
 kernel_end_flag:
 	    .4byte  0xdeadbeef
