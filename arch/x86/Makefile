@@ -21,7 +21,10 @@ all:  kernel.bin
 
 objs-kernel := $(output-kernel)/schedule.o
 objs-mm := $(output-mm)/heap.o
-objs := asm/iprintk.o bss.o main.o
+objs := asm/iprintk.o bss.o main.o asm/system_call.o
+
+asm/system_call.o: asm/system_call.S
+	$(CC) $(ASMKFLAGS) -o $@ -c $^
 
 bss.o: bss.c
 	$(CC) $(CFLAGS) -o $@ -c $^

@@ -1,7 +1,7 @@
 	.code32
 	.section .text
     .global idt, gdt
-    .global iprintk, _start_kernel,_end_kernel
+    .global iprintk, _start_kernel,_end_kernel,idt
 	jmp _start
     .include "pm.inc"
     .include "machine.inc"
@@ -180,7 +180,7 @@ rp_sidt:
 	dec %ecx
 	jne rp_sidt
     lidtl idt_descr
-	    ret
+    ret
 
     .section .kernel_end
 kernel_end_flag:

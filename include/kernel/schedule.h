@@ -3,9 +3,19 @@
 #include <head.h>
 #include <mm.h>
 
+#define HZ 100
+
 #define NR_TASKS 8
+#define FIRST_TASK task[0]
+#define LAST_TASK task[NR_TASKS-1]
 
 extern struct desc_struct *gdt;
+extern struct task_struct *task[NR_TASKS];
+extern struct task_struct *last_task_used_math;
+extern struct task_struct *current;
+extern long volatile jiffies;
+extern long startup_time;
+
 
 void schedule_init(void);
 
@@ -37,6 +47,9 @@ struct tss_struct {
 
 
 struct task_struct {
+    /* scheduler uses */
+    long counter;
+	long priority;
 /* ldt for this task 0 - zero 1 - cs 2 - ds&ss */
 	struct desc_struct ldt[3];
 /* tss for this task */
@@ -48,6 +61,7 @@ struct task_struct {
  *  INIT_TASK is used to set up the first task table.
  */
 #define INIT_TASK {\
+    15,15, \
     {\
         {0,0}, \
 /* ldt */	{0xFFFF,0xc0fa00},        /*code segment, DPL:3, G:1,D/B:1-32bit S:1-code/data*/ \
@@ -72,5 +86,23 @@ struct task_struct {
 #define _LDT(n) ((((unsigned long) n)<<4)+(FIRST_LDT_ENTRY<<3))
 #define ltr(n) __asm__("ltr %%ax"::"a" (_TSS(n)))
 #define lldt(n) __asm__("lldt %%ax"::"a" (_LDT(n)))
+
+/*
+ *	switch_to(n) should switch tasks to task nr n, first
+ * checking that n isn't the current task, in which case it does nothing.
+ * This also clears the TS-flag if the task we switched to has used
+ * tha math co-processor latest.
+ */
+#define switch_to(n) {\
+struct {long a,b;} __tmp; \
+__asm__("cmpl %%ecx,current\n\t" \
+	"je 1f\n\t" \
+	"movw %%dx,%1\n\t" \
+	"xchgl %%ecx,current\n\t" \
+	"ljmp *%0\n\t" \
+	"1:" \
+	::"m" (*&__tmp.a),"m" (*&__tmp.b), \
+	"d" (_TSS(n)),"c" ((long) task[n])); \
+}
 
 #endif
