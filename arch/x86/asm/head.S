@@ -78,6 +78,7 @@ setup_paging:
 
     movl %eax, (paging_frames)  #eax contains the number of page frames. pages*4K/4Btye
     movl $1024, %ecx        #allocate pages at the end of kernel and initialize them to zero
+    xor %edx, %edx
     mull %ecx       #edx:eax
     movl %eax, %ecx
     movl $_end_kernel, %edi

@@ -11,7 +11,17 @@ EFLAGS		= 0x24
 OLDESP		= 0x28
 OLDSS		= 0x2C
 
-    .globl timer_interrupt
+state	= 0		# these are offsets into the task-struct.
+counter	= 4
+priority = 8
+signal	= 12
+sigaction = 16		# MUST be 16 (=len of sigaction)
+blocked = (33*16)
+
+nr_system_calls = 72
+
+    .globl 	system_call,sys_fork,timer_interrupt
+
     .align 2
 timer_interrupt:
 	push %ds		# save ds,es and put kernel data space
@@ -36,8 +46,36 @@ timer_interrupt:
 	addl $4,%esp		# task switching to accounting ...
 	jmp ret_from_sys_call
 
-
-
+    .align 2
+bad_sys_call:
+	movl $-1,%eax
+	iret
+    .align 2
+reschedule:
+	pushl $ret_from_sys_call
+	jmp schedule
+    .align 2
+system_call:
+	cmpl $nr_system_calls-1,%eax
+	ja bad_sys_call
+	push %ds
+	push %es
+	push %fs
+	pushl %edx
+	pushl %ecx		# push %ebx,%ecx,%edx as parameters
+	pushl %ebx		# to the system call
+	movl $0x10,%edx		# set up ds,es to kernel space
+	mov %dx,%ds
+	mov %dx,%es
+	movl $0x17,%edx		# fs points to local data space
+	mov %dx,%fs
+	call *sys_call_table(,%eax,4)
+	pushl %eax
+	movl current,%eax
+	cmpl $0,state(%eax)		# state
+	jne reschedule
+	cmpl $0,counter(%eax)		# counter
+	je reschedule
 ret_from_sys_call:
 	popl %eax
 	popl %ebx
@@ -47,3 +85,18 @@ ret_from_sys_call:
 	pop %es
 	pop %ds
 	iret
+
+
+    .align 2
+sys_fork:
+	call find_empty_process
+	testl %eax,%eax
+	js 1f
+	push %gs
+	pushl %esi
+	pushl %edi
+	pushl %ebp
+	pushl %eax
+	call copy_process
+	addl $20,%esp
+1:	ret

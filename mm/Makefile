@@ -7,11 +7,15 @@ all: mm.o
 heap.o: heap.c $(BASE)/include/mm/heap.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-objs := heap.o
+
+memory.o: memory.c $(BASE)/include/mm/heap.h
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+objs := heap.o memory.o
 
 mm.o: $(objs)
 
 clean:
-	rm -rf $(objs) mm.o
+	rm -rf $(objs)
 
 .PHONY: all clean

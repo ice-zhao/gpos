@@ -1,13 +1,16 @@
-#include <schedule.h>
+#include <kernel/schedule.h>
+#include <kernel/sys.h>
 #include <bss.h>
 #include <asm/include/system.h>
 #include <asm/include/io.h>
 #include <print.h>
+#include <mm/heap.h>
 
 #define LATCH (1193182/HZ)
 
 
 extern int timer_interrupt(void);
+extern int system_call(void);
 
 union task_union {
 	struct task_struct task;
@@ -53,6 +56,7 @@ void schedule_init(void) {
     set_intr_gate(0x20,&timer_interrupt);
 	outb(inb_p(0x21)|0xFF,0x21);   //mask all interrupts
     outb(inb_p(0x21)&~0x01,0x21);   //enable timer interrupt
+	set_system_gate(0x80,&system_call);
 }
 
 
@@ -66,21 +70,20 @@ void schedule(void)
 		next = 0;
 		i = NR_TASKS;
 		p = &task[NR_TASKS];
-		while (--i) {
+		while (--i >= 0) {
 			if (!*--p)
 				continue;
-			if ((*p)->counter > c)
+			if ((*p)->state == TASK_RUNNING && (*p)->counter > c)   //find max counter of processes
 				c = (*p)->counter, next = i;
 		}
-		if (c) break;
-		for(p = &LAST_TASK ; p > &FIRST_TASK ; --p)
+		if (c > 0) break;
+		for(p = &LAST_TASK ; p >= &FIRST_TASK ; --p)
 			if (*p)
 				(*p)->counter = ((*p)->counter >> 1) +
                     (*p)->priority;
 	}
 	switch_to(next);
 }
-
 
 void do_timer(long cpl)
 {
@@ -96,5 +99,78 @@ void do_timer(long cpl)
 	if ((--current->counter)>0) return;
 	current->counter=0;
 	if (!cpl) return;
-	/* schedule(); */
+	schedule();
 }
+
+
+int sys_setup(){};
+int sys_exit(){};
+int sys_read(){};
+int sys_write(){};
+int sys_open(){};
+int sys_close(){};
+int sys_waitpid(){};
+int sys_creat(){};
+int sys_link(){};
+int sys_unlink(){};
+int sys_execve(){};
+int sys_chdir(){};
+int sys_time(){};
+int sys_mknod(){};
+int sys_chmod(){};
+int sys_chown(){};
+int sys_break(){};
+int sys_stat(){};
+int sys_lseek(){};
+int sys_getpid(){};
+int sys_mount(){};
+int sys_umount(){};
+int sys_setuid(){};
+int sys_getuid(){};
+int sys_stime(){};
+int sys_ptrace(){};
+int sys_alarm(){};
+int sys_fstat(){};
+int sys_pause(){};
+int sys_utime(){};
+int sys_stty(){};
+int sys_gtty(){};
+int sys_access(){};
+int sys_nice(){};
+int sys_ftime(){};
+int sys_sync(){};
+int sys_kill(){};
+int sys_rename(){};
+int sys_mkdir(){};
+int sys_rmdir(){};
+int sys_dup(){};
+int sys_pipe(){};
+int sys_times(){};
+int sys_prof(){};
+int sys_brk(){};
+int sys_setgid(){};
+int sys_getgid(){};
+int sys_signal(){};
+int sys_geteuid(){};
+int sys_getegid(){};
+int sys_acct(){};
+int sys_phys(){};
+int sys_lock(){};
+int sys_ioctl(){};
+int sys_fcntl(){};
+int sys_mpx(){};
+int sys_setpgid(){};
+int sys_ulimit(){};
+int sys_uname(){};
+int sys_umask(){};
+int sys_chroot(){};
+int sys_ustat(){};
+int sys_dup2(){};
+int sys_getppid(){};
+int sys_getpgrp(){};
+int sys_setsid(){};
+int sys_sigaction(){};
+int sys_sgetmask(){};
+int sys_ssetmask(){};
+int sys_setreuid(){};
+int sys_setregid(){};

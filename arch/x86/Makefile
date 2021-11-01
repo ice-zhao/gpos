@@ -4,9 +4,9 @@ AS=as
 PWD=$(shell pwd)
 KERNELLD=$(PWD)/kernel_x86.ld
 OBJCOPY=objcopy
-FDIMAGE=$(PWD)/../../utils/gpos.img
+FDIMAGE=$(BASE)/utils/gpos.img
 ARCHINCLUDE=$(PWD)/asm/include
-floppy=$(PWD)/../../bootloader/x86/floppy
+floppy=$(BASE)/bootloader/x86/floppy
 
 ASMKFLAGS	= -I include/ -I $(ARCHINCLUDE) -m32
 
@@ -14,17 +14,19 @@ include asm/include/Makefile
 output := $(BASE)
 output-kernel := $(output)/kernel
 output-mm := $(output)/mm
+output-lib := $(output)/lib
 
 CFLAGS += -I $(BASE)/arch/$(ARCH)/ -I $(BASE)/include/
 
 all:  kernel.bin
 
-objs-kernel := $(output-kernel)/schedule.o
-objs-mm := $(output-mm)/heap.o
+objs-kernel := $(output-kernel)/schedule.o $(output-kernel)/fork.o
+objs-mm := $(output-mm)/heap.o $(output-mm)/memory.o
+objs-lib := $(output-lib)/errno.o
 objs := asm/iprintk.o bss.o main.o asm/system_call.o
 
-asm/system_call.o: asm/system_call.S
-	$(CC) $(ASMKFLAGS) -o $@ -c $^
+asm/system_call.o: asm/system_call.S $(BASE)/include/kernel/sys.h $(BASE)/include/kernel/schedule.h
+	$(CC) $(ASMKFLAGS) -o $@ -c $<
 
 bss.o: bss.c
 	$(CC) $(CFLAGS) -o $@ -c $^
@@ -32,13 +34,13 @@ bss.o: bss.c
 asm/iprintk.o: asm/iprintk.S
 	$(CC) $(ASMKFLAGS) -o $@ -c $^
 
-main.o: main.c
-	$(CC) $(CFLAGS) -o $@ -c $^
+main.o: main.c $(BASE)/include/unistd.h
+	$(CC) $(CFLAGS) -o $@ -c $<
 
 asm/head.o: asm/head.S
 	$(CC) $(ASMKFLAGS) -o $@ -c $^
 
-asm/kernel.elf: asm/head.o $(objs) $(objs-kernel) $(objs-mm)
+asm/kernel.elf: asm/head.o $(objs) $(objs-kernel) $(objs-mm) $(objs-lib)
 	$(LD) -T$(KERNELLD) $(LDFLAGS) $^ -o $@
 	$(Q)nm $@ | grep -v '\(compiled\)\|\(\.o$$\)\|\( [aU] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)'| sort > kernel.map
 

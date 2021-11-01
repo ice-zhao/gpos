@@ -15,6 +15,7 @@ bootloader:
 
 
 kernel:
+	make all -C ./lib
 	make all -C ./kernel
 	make all -C ./mm
 	make all -C ./arch/x86
@@ -33,5 +34,6 @@ clean:
 	make clean -C ./mm
 	make clean -C ./kernel
 	make clean -C ./arch/x86
+	make clean -C ./lib
 
 .PHONY: bootloader kernel install clean install_kernel install_bootloader
