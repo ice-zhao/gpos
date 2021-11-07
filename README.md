@@ -20,4 +20,6 @@ build up a new Operating System from scratch.
    
 ![图片](https://user-images.githubusercontent.com/39359146/139679170-9ca64eeb-1c60-414a-b50f-635493fcab6e.png)
 
-   
+4. 添加内存管理
+
+   Add Memory management   
