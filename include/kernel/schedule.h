@@ -1,7 +1,7 @@
 #ifndef __SCHEDULE_H__
 #define __SCHEDULE_H__
 #include <kernel/head.h>
-#include <kernel/mm.h>
+#include <mm/mm.h>
 
 #define HZ 100
 
@@ -111,10 +111,11 @@ __asm__("cmpl %%ecx,current\n\t" \
 	"je 1f\n\t" \
 	"movw %%dx,%1\n\t" \
 	"xchgl %%ecx,current\n\t" \
-	"ljmp *%0\n\t" \
+	"ljmpl *%0\n\t" \
+    "clts \n\t"     \
 	"1:" \
 	::"m" (*&__tmp.a),"m" (*&__tmp.b), \
-	"d" (_TSS(n)),"c" ((long) task[n])); \
+	"d" (_TSS(n)),"c" ((unsigned long) task[n])); \
 }
 
 static inline unsigned long _get_base(char * addr)

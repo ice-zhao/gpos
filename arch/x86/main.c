@@ -4,9 +4,12 @@
 #include <bss.h>
 #include <kernel/schedule.h>
 #include <asm/include/system.h>
+#include <machine.h>
 #include <mm/heap.h>
+#include <mm/mm.h>
 #include <asm/include/io.h>
 #include <unistd.h>
+#include <machine.h>
 
 
 /*
@@ -61,14 +64,19 @@ void process0(void) {
 
 void main(void)
 {
+    init_machine_data();
     init_bss_section();
     init_heap();
+    mm_init();
     schedule_init();
     sti();
 
-    void* task0_user_stack = get_heap(long, 1024);  //4K
-    long stack_top = (long)task0_user_stack + 4096;
-    move_to_user_mode((long)stack_top);
+    unsigned long stack_top = get_free_page() + 4096;
+    move_to_user_mode(stack_top);
+
+    if(!fork()) {       //create second process 1
+        process1();
+    }
 
     if(!fork()) {       //create second process 1
         process1();

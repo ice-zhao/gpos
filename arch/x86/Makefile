@@ -23,7 +23,7 @@ all:  kernel.bin
 objs-kernel := $(output-kernel)/schedule.o $(output-kernel)/fork.o
 objs-mm := $(output-mm)/heap.o $(output-mm)/memory.o
 objs-lib := $(output-lib)/errno.o
-objs := asm/iprintk.o bss.o main.o asm/system_call.o
+objs := asm/iprintk.o bss.o main.o asm/system_call.o machine.o
 
 asm/system_call.o: asm/system_call.S $(BASE)/include/kernel/sys.h $(BASE)/include/kernel/schedule.h
 	$(CC) $(ASMKFLAGS) -o $@ -c $<
@@ -39,6 +39,9 @@ main.o: main.c $(BASE)/include/unistd.h
 
 asm/head.o: asm/head.S
 	$(CC) $(ASMKFLAGS) -o $@ -c $^
+
+machine.o: machine.c
+	$(CC) $(CFLAGS) -o $@ -c $^
 
 asm/kernel.elf: asm/head.o $(objs) $(objs-kernel) $(objs-mm) $(objs-lib)
 	$(LD) -T$(KERNELLD) $(LDFLAGS) $^ -o $@

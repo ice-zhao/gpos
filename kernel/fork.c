@@ -1,6 +1,7 @@
 #include <kernel/schedule.h>
 #include <errno.h>
 #include <mm/heap.h>
+#include <mm/mm.h>
 #include <print.h>
 #include <unistd.h>
 #include <asm/include/system.h>
@@ -59,7 +60,7 @@ int copy_process(int nr,long ebp,long edi,long esi,long gs,long none,
 	struct task_struct *p;
 	int i;
 
-	p = (struct task_struct *) get_heap(long, 1024);    //4K
+	p = (struct task_struct *) get_free_page();
 	if (!p)
 		return -EAGAIN;
 	task[nr] = p;
@@ -69,7 +70,7 @@ int copy_process(int nr,long ebp,long edi,long esi,long gs,long none,
 	p->pid = last_pid;
 	p->counter = p->priority;
 	p->tss.back_link = 0;
-	p->tss.esp0 = PAGE_SIZE + (long) p;
+	p->tss.esp0 = PAGE_SIZE + (long)p;
 	p->tss.ss0 = 0x10;
     p->tss.cr3 = (long)(&_pg_dir);
 	p->tss.eip = eip;
@@ -78,7 +79,7 @@ int copy_process(int nr,long ebp,long edi,long esi,long gs,long none,
 	p->tss.ecx = ecx;
 	p->tss.edx = edx;
 	p->tss.ebx = ebx;
-	p->tss.esp = ((long)get_heap(long, 1024))+4096;    //4K
+	p->tss.esp = (long)(get_free_page()+4096);    //move to page top
 	p->tss.ebp = ebp;
 	p->tss.esi = esi;
 	p->tss.edi = edi;

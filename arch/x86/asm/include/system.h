@@ -18,18 +18,19 @@
                ::"m" (stack_top):"ax");         \
     }
 
+
 #define _set_tssldt_desc(n,addr,type)                                   \
-    __asm__ volatile ("movw $104,%1 \n"                                 \
-                  "movw %%ax,%2 \n"                                     \
-                  "rorl $16,%%eax \n"                                   \
-                  "movb %%al,%3 \n"                                     \
-                  "movb $"type ",%4 \n"                                 \
-                  "movb $0x00,%5 \n"                                    \
-                  "movb %%ah,%6 \n"                                     \
-                  "rorl $16,%%eax \n"                                   \
-                  ::"a" (addr), "m" (*(n)), "m" (*(n+2)), "m" (*(n+4)), \
-                   "m" (*(n+5)), "m" (*(n+6)), "g" (*(n+7)) \
+    __asm__ volatile ("movw $104,(%%ecx) \n"                            \
+                      "movw %%ax,2(%%ecx) \n"                           \
+                      "rorl $16,%%eax \n"                                   \
+                      "movb %%al,4(%%ecx) \n"                                     \
+                      "movb $"type ",5(%%ecx) \n"                       \
+                      "movb $0x00,6(%%ecx) \n"                      \
+                      "movb %%ah,7(%%ecx) \n"                       \
+                      "rorl $16,%%eax \n"                                   \
+                  ::"a" (addr), "c" (n) \
         )
+
 
 
 /*0x89: P:1,DPL:0,S:0; type:9-tss */
@@ -59,5 +60,6 @@ __asm__ ("movw %%dx,%%ax\n\t" \
 	_set_gate(&idt[n],15,3,addr)
 
 #define sti() __asm__ ("sti"::)
+#define cli() __asm__ ("cli"::)
 
 #endif
