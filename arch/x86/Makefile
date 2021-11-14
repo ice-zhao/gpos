@@ -8,9 +8,10 @@ FDIMAGE=$(BASE)/utils/gpos.img
 ARCHINCLUDE=$(PWD)/asm/include
 floppy=$(BASE)/bootloader/x86/floppy
 
-ASMKFLAGS	= -I include/ -I $(ARCHINCLUDE) -m32
-
 include asm/include/Makefile
+
+ASMKFLAGS += -I $(ARCHINCLUDE)
+
 output := $(BASE)
 output-kernel := $(output)/kernel
 output-mm := $(output)/mm
@@ -20,8 +21,8 @@ CFLAGS += -I $(BASE)/arch/$(ARCH)/ -I $(BASE)/include/
 
 all:  kernel.bin
 
-objs-kernel := $(output-kernel)/schedule.o $(output-kernel)/fork.o
-objs-mm := $(output-mm)/heap.o $(output-mm)/memory.o
+objs-kernel := $(output-kernel)/schedule.o $(output-kernel)/fork.o $(output-kernel)/trap.o
+objs-mm := $(output-mm)/heap.o $(output-mm)/memory.o $(output-mm)/page.o
 objs-lib := $(output-lib)/errno.o
 objs := asm/iprintk.o bss.o main.o asm/system_call.o machine.o
 

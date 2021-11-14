@@ -1,9 +1,6 @@
 #include <bss.h>
+#include <string.h>
 
 void init_bss_section(void) {
-    char* p = NULL;
-
-    for(p = _bss; p < _ebss; p++) {
-        *p = 0;
-    }
+    memset(bss_start_ptr, 0, bss_end_ptr - bss_start_ptr);
 }

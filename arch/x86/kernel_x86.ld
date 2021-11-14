@@ -8,9 +8,12 @@ SECTIONS
         _ftext = .;
     }
 
-    .data :
+    .data : ALIGN(8)
     {
-
+        _data = .;
+        *(.data)
+        *(.data.*)
+        _edata = .;
     }
 
     .bss : {
@@ -18,7 +21,6 @@ SECTIONS
         *(.bss)
 		*(.bss.*)
 		*(COMMON)
-		. = ALIGN(8);	/* For convenience during zeroing */
         _ebss = . ;
     }
 

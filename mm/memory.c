@@ -1,5 +1,6 @@
 #include <print.h>
 #include <kernel/head.h>
+#include <kernel/mm_types.h>
 #include <mm/heap.h>
 #include <machine.h>
 #include <mm/mm.h>
@@ -35,12 +36,11 @@ int copy_page_tables(unsigned long from,unsigned long to,long size)
 	unsigned long this_page;
 	unsigned long * from_dir, * to_dir;
 	unsigned long nr;
-    unsigned long *base_dir = (unsigned long*)(&_pg_dir);
-
+	
 	if ((from&0x3fffff) || (to&0x3fffff))
 		iprintk("copy_page_tables called with wrong alignment\n");
-	from_dir = (unsigned long *)(base_dir + ((from>>22) & 0x3ff)); /* _pg_dir = _end_kernel */
-	to_dir = (unsigned long *)(base_dir + ((to>>22) & 0x3ff));
+	from_dir = (unsigned long *)(pgdir_table_ptr + ((from>>22) & 0x3ff));
+	to_dir = (unsigned long *)(pgdir_table_ptr + ((to>>22) & 0x3ff));
 	size = ((unsigned) (size+0x3fffff)) >> 22;
 	for( ; size-->0 ; from_dir++,to_dir++) {
 		if (1 & *to_dir) {
@@ -58,14 +58,12 @@ int copy_page_tables(unsigned long from,unsigned long to,long size)
 			this_page = *from_page_table;
 			if (!(1 & this_page))
 				continue;
-			/* this_page &= ~2; */  //later for COW, but not now!!!
+			this_page &= ~2;  //for COW
 			*to_page_table = this_page;
-			/* if (this_page > LOW_MEM) { */
-			/* 	*from_page_table = this_page; */
-			/* 	this_page -= LOW_MEM; */
-			/* 	this_page >>= 12; */
-			/* 	mem_map[this_page]++; */
-			/* } */
+			if (this_page >= LOW_MEM) {
+				*from_page_table = this_page;
+                mms_page(this_page)->_refcount++;
+			}
 		}
 	}
 	invalidate();
@@ -74,16 +72,19 @@ int copy_page_tables(unsigned long from,unsigned long to,long size)
 
 
 static long memory_end = 0;
-static long buffer_memory_end = 4*1024*1024;    //4M
+static const long buffer_memory_end = 4*1024*1024;    //4M
 static long main_memory_start = 0;
 static long HIGH_MEMORY = 0;
 static long PAGING_MEMORY = 0;
 static long PAGING_PAGES = 0;
 static unsigned long mem_map [ MM_BITMAPS ] = {0,};
+static const unsigned long mm_pages_start = buffer_memory_end;
+static unsigned long mm_pages_size = 1*1024*1024;   //1M
+struct page *mm_pages =(struct page *)mm_pages_start;
 
 void mm_init(void) {
     memory_end = mach_data.total_mem_size<<10;
-    main_memory_start = buffer_memory_end;
+    main_memory_start = mm_pages_start + mm_pages_size;
 
     HIGH_MEMORY = memory_end;
     PAGING_MEMORY = memory_end - LOW_MEM;
@@ -92,6 +93,10 @@ void mm_init(void) {
     int i;
     for(i=0; i<MM_BITMAPS; i++) {
         mem_map[i]=0xFFFFFFFF;
+    }
+
+    for(i=0; i<MM_PAGES; i++) {
+        (mm_pages+i)->_refcount++;
     }
 
     unsigned long addr = 0;
@@ -105,15 +110,19 @@ void mm_init(void) {
 
 void set_mem_map(unsigned long addr) {
     struct mm_bitpos bp;
+    addr &= 0xfffff000;
     if(!get_bitpos(addr, &bp)) {
         mem_map[bp.pos] |= (1<<bp.idx);
+        mms_page(addr)->_refcount++;
     }
 }
 
 void clear_mem_map(unsigned long addr) {
     struct mm_bitpos bp;
     if(!get_bitpos(addr, &bp)) {
-        mem_map[bp.pos] &= ~(1<<bp.idx);
+        if(--mms_page(addr)->_refcount == 0) {
+            mem_map[bp.pos] &= ~(1<<bp.idx);
+        }
     }
 }
 
@@ -124,7 +133,7 @@ void clear_mem_map(unsigned long addr) {
  */
 unsigned long get_free_page(void)
 {
-    unsigned long addr;
+    unsigned long addr = 0;
     register unsigned long pos asm("eax");
 
     __asm__ ("std; repe; scasl \n\t"
@@ -135,19 +144,52 @@ unsigned long get_free_page(void)
              :"0" (0xFFFFFFFF), "c" (MM_BITMAPS), "D" (mem_map+MM_BITMAPS-1)
         );
 
-    int idx=sizeof(long)*8;
-    if(pos >=0 && pos <MM_BITMAPS) {
-        while(--idx >= 0 && (mem_map[pos] & (1<<idx)));
-        /* 1bit stands for 4K, 1 long type element has 32bits */
-        addr = (pos*sizeof(long)*8 + idx) * 4096 + LOW_MEM;
-        memset((void*)addr,0,PAGE_SIZE);
-        set_mem_map(addr);
-    }
-    else
-    {
+    if(pos < 0) {
+        iprintk("get_free_page: out of memory! \n");
         addr=0;
-        iprintk("get free page bad: zero \n");
+        return addr;
     }
 
+    int idx=sizeof(long)*8;
+    while(--idx >= 0 && (mem_map[pos] & (1<<idx)));
+    /* 1bit stands for 4K, 1 long type element has 32bits */
+    addr = (pos*sizeof(long)*8 + idx) * 4096 + LOW_MEM;
+    memset((void*)addr,0,PAGE_SIZE);
+    set_mem_map(addr);
+
     return addr;
+}
+
+void un_wp_page(unsigned long * page_table_entry)
+{
+	unsigned long old_page,new_page;
+
+	old_page = 0xfffff000 & *page_table_entry;
+	if (old_page >= LOW_MEM && mms_page(old_page)->_refcount ==1) {
+		*page_table_entry |= 2;
+		invalidate();
+        return;
+	}
+	if (!(new_page=get_free_page())) {
+        iprintk("out of memory \n");
+		/* oom(); */
+    }
+	if (old_page >= LOW_MEM) {
+		mms_page(old_page)->_refcount--;
+    }
+	*page_table_entry = new_page | 7;
+	invalidate();
+	copy_page(old_page,new_page);
+}
+
+/*
+ * This routine handles present pages, when users try to write
+ * to a shared page. It is done by copying the page to a new address
+ * and decrementing the shared-page counter for the old page.
+ *
+ * If it's in code space we exit with a segment error.
+ */
+void do_wp_page(unsigned long error_code,unsigned long address)
+{
+	un_wp_page(pte_ptr(address));
 }

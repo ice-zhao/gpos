@@ -10,7 +10,7 @@
 #include <asm/include/io.h>
 #include <unistd.h>
 #include <machine.h>
-
+#include <kernel/trap.h>
 
 /*
  * we need this inline - forking from kernel space will result
@@ -52,6 +52,10 @@ void process1(void) {
 void process0(void) {
     long start0=jiffies;
 
+    if(!fork()) {       //create second process 1
+        process1();
+    }
+
     for(;;) {
         long end=jiffies;
         if(end - start0 > 300) {
@@ -61,11 +65,12 @@ void process0(void) {
     }
 }
 
-
 void main(void)
 {
     init_machine_data();
     init_bss_section();
+    init_machine_data();
+    trap_init();
     init_heap();
     mm_init();
     schedule_init();
@@ -73,16 +78,6 @@ void main(void)
 
     unsigned long stack_top = get_free_page() + 4096;
     move_to_user_mode(stack_top);
-
-    if(!fork()) {       //create second process 1
-        process1();
-    }
-
-    if(!fork()) {       //create second process 1
-        process1();
-    }
-
-    for(;;) {
-        process0();     //here is process 0
-    }
+    
+	process0();     //here is process 0
 }

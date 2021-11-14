@@ -1,6 +1,8 @@
 #ifndef __SYSTEM_H__
 #define __SYSTEM_H__
 
+#include <kernel/head.h>
+
 #define move_to_user_mode(stack_top)           \
     { __asm__ (                                 \
              "pushl $0x17\n\t"                  \
@@ -22,12 +24,12 @@
 #define _set_tssldt_desc(n,addr,type)                                   \
     __asm__ volatile ("movw $104,(%%ecx) \n"                            \
                       "movw %%ax,2(%%ecx) \n"                           \
-                      "rorl $16,%%eax \n"                                   \
-                      "movb %%al,4(%%ecx) \n"                                     \
+                      "rorl $16,%%eax \n"                               \
+                      "movb %%al,4(%%ecx) \n"                           \
                       "movb $"type ",5(%%ecx) \n"                       \
-                      "movb $0x00,6(%%ecx) \n"                      \
-                      "movb %%ah,7(%%ecx) \n"                       \
-                      "rorl $16,%%eax \n"                                   \
+                      "movb $0x00,6(%%ecx) \n"                          \
+                      "movb %%ah,7(%%ecx) \n"                           \
+                      "rorl $16,%%eax \n"                               \
                   ::"a" (addr), "c" (n) \
         )
 
