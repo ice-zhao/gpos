@@ -23,6 +23,9 @@ build up a new Operating System from scratch.
 4. 内存管理
 
    4.1 添加内存管理
+
    Add Memory management
+   
    4.2 Copy On Write 开始工作
+   
    Copy On Write works now.
