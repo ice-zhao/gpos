@@ -14,12 +14,17 @@ build up a new Operating System from scratch.
   
 ![图片](https://user-images.githubusercontent.com/39359146/138578370-109e8a61-a714-4c2b-bab8-c356c8bc7cfd.png)
 
-3. 系统调用fork()创建进程１，并加入进程调度;)
+3. 系统调用
 
-   use fork() system call to create second process 1, which will be scheduled by process scheduler.
+   3.1 系统调用fork()创建进程１，并加入进程调度;)
+
+   Use fork() system call to create second process 1, which will be scheduled by process scheduler.
    
 ![图片](https://user-images.githubusercontent.com/39359146/139679170-9ca64eeb-1c60-414a-b50f-635493fcab6e.png)
 
+     3.2 setup() 系统调用
+   
+     Add setup() system call.
 4. 内存管理
 
    4.1 添加内存管理
