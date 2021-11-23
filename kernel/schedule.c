@@ -103,7 +103,6 @@ void do_timer(long cpl)
 }
 
 
-int sys_setup(){};
 int sys_exit(){};
 int sys_read(){};
 int sys_write(){};

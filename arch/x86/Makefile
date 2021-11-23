@@ -16,6 +16,8 @@ output := $(BASE)
 output-kernel := $(output)/kernel
 output-mm := $(output)/mm
 output-lib := $(output)/lib
+output-drivers := $(output)/drivers
+output-fs := $(output)/fs
 
 CFLAGS += -I $(BASE)/arch/$(ARCH)/ -I $(BASE)/include/
 
@@ -25,6 +27,9 @@ objs-kernel := $(output-kernel)/schedule.o $(output-kernel)/fork.o $(output-kern
 objs-mm := $(output-mm)/heap.o $(output-mm)/memory.o $(output-mm)/page.o
 objs-lib := $(output-lib)/errno.o
 objs := asm/iprintk.o bss.o main.o asm/system_call.o machine.o
+objs-drivers := $(output-drivers)/block/hardisk/hd.o
+objs-fs := $(output-fs)/buffer.o
+objs-all := $(objs-kernel) $(objs-mm) $(objs-lib) $(objs-drivers) $(objs-fs)
 
 asm/system_call.o: asm/system_call.S $(BASE)/include/kernel/sys.h $(BASE)/include/kernel/schedule.h
 	$(CC) $(ASMKFLAGS) -o $@ -c $<
@@ -44,7 +49,7 @@ asm/head.o: asm/head.S
 machine.o: machine.c
 	$(CC) $(CFLAGS) -o $@ -c $^
 
-asm/kernel.elf: asm/head.o $(objs) $(objs-kernel) $(objs-mm) $(objs-lib)
+asm/kernel.elf: asm/head.o $(objs) $(objs-all)
 	$(LD) -T$(KERNELLD) $(LDFLAGS) $^ -o $@
 	$(Q)nm $@ | grep -v '\(compiled\)\|\(\.o$$\)\|\( [aU] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)'| sort > kernel.map
 

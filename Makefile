@@ -18,7 +18,9 @@ kernel:
 	make all -C ./lib
 	make all -C ./kernel
 	make all -C ./mm
+	make all -C ./drivers
 	make all -C ./arch/x86
+	make all -C ./fs
 
 install: install_bootloader install_kernel
 
@@ -35,5 +37,7 @@ clean:
 	make clean -C ./kernel
 	make clean -C ./arch/x86
 	make clean -C ./lib
+	make clean -C ./drivers
+	make clean -C ./fs
 
 .PHONY: bootloader kernel install clean install_kernel install_bootloader

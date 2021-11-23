@@ -28,13 +28,19 @@ static inline int fork(void) __attribute__((always_inline));
 static inline int pause(void) __attribute__((always_inline));
 static inline _syscall0(int,fork)
 static inline _syscall0(int,pause)
-
-
-
+static inline _syscall1(int,setup,void *,BIOS)
+static inline _syscall0(int,sync)
 
 extern void schedule(void);
+/* hard disk info */
+struct drive_info { char dummy[32]; } drive_info;
 
-extern char* _pg_dir;
+/*
+ * This is set up by the boot-loader.
+ */
+#define EXT_MEM_K (*(unsigned short *)0x90002)
+#define DRIVE_INFO (*(struct drive_info *)0x90080)
+#define ORIG_ROOT_DEV (*(unsigned short *)0x901FC)
 
 
 void process1(void) {
@@ -53,6 +59,7 @@ void process0(void) {
     long start0=jiffies;
 
     if(!fork()) {       //create second process 1
+        setup(&drive_info);
         process1();
     }
 
@@ -65,10 +72,12 @@ void process0(void) {
     }
 }
 
+
 void main(void)
 {
     init_machine_data();
     init_bss_section();
+    drive_info = DRIVE_INFO;
     init_machine_data();
     trap_init();
     init_heap();
@@ -78,6 +87,6 @@ void main(void)
 
     unsigned long stack_top = get_free_page() + 4096;
     move_to_user_mode(stack_top);
-    
-	process0();     //here is process 0
+
+    process0();     //here is process 0
 }

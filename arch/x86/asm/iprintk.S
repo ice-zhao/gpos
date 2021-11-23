@@ -20,6 +20,9 @@ iprintk:
     movl $cursor_pos, %eax
     movl (%eax), %edi       #load cursor position
     movb $0xF, %ah          #charactor color
+    cmpl $4000, %edi        #output 25 line, go back to first line
+    jb 1f
+    movl $0, %edi
 
 1:
     lodsb
@@ -54,5 +57,5 @@ iprintk:
 
     .section .data
 _cursor_pos:
-	    .4byte (80 * 7 + 0) * 2   # at 7th line, 0 column
+	    .4byte (80 * 0 + 0) * 2   # at 0 line, 0 column
 	    .equ   cursor_pos, (KERNEL_PHY_ADDR + _cursor_pos)

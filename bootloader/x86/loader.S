@@ -191,6 +191,7 @@ LABEL_FILE_LOADED:
     push %es
     mov	$0x0000, %ax
 	mov	%ax, %ds
+    xorl %esi, %esi
 	lds	%ds:4*0x41, %si
 	mov	$BaseOfLoader, %ax
 	mov	%ax, %es

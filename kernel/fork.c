@@ -110,6 +110,5 @@ int copy_process(int nr,long ebp,long edi,long esi,long gs,long none,
 	set_tss_desc((struct desc_struct *)&gdt+(nr<<1)+FIRST_TSS_ENTRY,&(p->tss));
 	set_ldt_desc((struct desc_struct *)&gdt+(nr<<1)+FIRST_LDT_ENTRY,&(p->ldt));
 	p->state = TASK_RUNNING;	/* do this last, just in case */
-	
 	return last_pid;
 }
