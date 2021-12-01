@@ -34,3 +34,11 @@ build up a new Operating System from scratch.
    4.2 Copy On Write 开始工作
    
    Copy On Write works now.
+   
+5. 文件系统
+   
+   File system
+   
+   4.1 文件系统缓存
+   File system buffer.
+   
