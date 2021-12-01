@@ -42,7 +42,6 @@ struct drive_info { char dummy[32]; } drive_info;
 #define DRIVE_INFO (*(struct drive_info *)0x90080)
 #define ORIG_ROOT_DEV (*(unsigned short *)0x901FC)
 
-
 void process1(void) {
     long start1=jiffies;
 

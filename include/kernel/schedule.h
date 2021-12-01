@@ -171,4 +171,7 @@ __asm__ ("push %%edx\n\t" \
 #define set_base(ldt,base) _set_base( ((char *)&(ldt)) , (base) )
 #define set_limit(ldt,limit) _set_limit( ((char *)&(ldt)) , (limit-1)>>12 )
 
+extern void sleep_on(struct task_struct ** p);
+extern void wake_up(struct task_struct **p);
+
 #endif

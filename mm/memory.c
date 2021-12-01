@@ -6,6 +6,7 @@
 #include <mm/mm.h>
 #include <asm/include/system.h>
 #include <string.h>
+#include <fs/fs.h>
 
 #define invalidate() \
     __asm__("movl %%eax,%%cr3"::"a" (&_pg_dir))
@@ -79,7 +80,7 @@ static long PAGING_MEMORY = 0;
 static long PAGING_PAGES = 0;
 static unsigned long mem_map [ MM_BITMAPS ] = {0,};
 static const unsigned long mm_pages_start = buffer_memory_end;
-static unsigned long mm_pages_size = 1*1024*1024;   //1M
+static unsigned long mm_pages_size = 4*1024*1024;   //4M
 struct page *mm_pages =(struct page *)mm_pages_start;
 
 void mm_init(void) {
@@ -104,7 +105,7 @@ void mm_init(void) {
         clear_mem_map(addr);
     }
 
-
+    buffer_init(buffer_memory_end);
 }
 
 

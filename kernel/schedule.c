@@ -5,6 +5,7 @@
 #include <asm/include/io.h>
 #include <print.h>
 #include <mm/heap.h>
+#include <print.h>
 
 #define LATCH (1193182/HZ)
 
@@ -102,6 +103,33 @@ void do_timer(long cpl)
 	schedule();
 }
 
+void sleep_on(struct task_struct **p)
+{
+	struct task_struct *tmp;
+
+	if (!p)
+		return;
+	if (current == &(init_task.task)) {
+        iprintk("task[0] trying to sleep");
+        /* panic("task[0] trying to sleep"); */
+        for(;;);
+    }
+	tmp = *p;
+	*p = current;
+	current->state = TASK_UNINTERRUPTIBLE;
+	schedule();
+	*p = tmp;
+	if (tmp)
+		tmp->state=TASK_RUNNING;
+}
+
+void wake_up(struct task_struct **p)
+{
+	if (p && *p) {
+		(*p)->state = TASK_RUNNING;
+		*p = NULL;
+	}
+}
 
 int sys_exit(){};
 int sys_read(){};
