@@ -16,7 +16,7 @@ output := $(BASE)
 output-kernel := $(output)/kernel
 output-mm := $(output)/mm
 output-lib := $(output)/lib
-output-drivers := $(output)/drivers
+output-hd-drivers := $(output)/drivers/block/hardisk
 output-fs := $(output)/fs
 
 CFLAGS += -I $(BASE)/arch/$(ARCH)/ -I $(BASE)/include/
@@ -27,7 +27,7 @@ objs-kernel := $(output-kernel)/schedule.o $(output-kernel)/fork.o $(output-kern
 objs-mm := $(output-mm)/heap.o $(output-mm)/memory.o $(output-mm)/page.o
 objs-lib := $(output-lib)/errno.o
 objs := asm/iprintk.o bss.o main.o asm/system_call.o machine.o
-objs-drivers := $(output-drivers)/block/hardisk/hd.o
+objs-drivers := $(output-hd-drivers)/hd.o $(output-hd-drivers)/ll_rw_blk.o
 objs-fs := $(output-fs)/buffer.o
 objs-all := $(objs-kernel) $(objs-mm) $(objs-lib) $(objs-drivers) $(objs-fs)
 

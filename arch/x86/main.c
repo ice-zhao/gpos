@@ -32,6 +32,8 @@ static inline _syscall1(int,setup,void *,BIOS)
 static inline _syscall0(int,sync)
 
 extern void schedule(void);
+extern void hd_init(void);
+extern void blk_dev_init(void);
 /* hard disk info */
 struct drive_info { char dummy[32]; } drive_info;
 
@@ -82,6 +84,8 @@ void main(void)
     init_heap();
     mm_init();
     schedule_init();
+    blk_dev_init();
+    hd_init();
     sti();
 
     unsigned long stack_top = get_free_page() + 4096;

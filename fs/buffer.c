@@ -214,7 +214,7 @@ struct buffer_head * bread(int dev,int block)
     }
 	if (bh->b_uptodate)
 		return bh;
-	/* ll_rw_block(READ,bh); */
+	ll_rw_block(READ,bh);
 	wait_on_buffer(bh);
 	if (bh->b_uptodate)
 		return bh;

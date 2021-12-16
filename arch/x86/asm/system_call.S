@@ -21,6 +21,7 @@ blocked = (33*16)
 nr_system_calls = 72
 
     .globl 	system_call,sys_fork,timer_interrupt
+    .globl hd_interrupt
 
     .align 2
 timer_interrupt:
@@ -100,3 +101,34 @@ sys_fork:
 	call copy_process
 	addl $20,%esp
 1:	ret
+
+hd_interrupt:
+	pushl %eax
+	pushl %ecx
+	pushl %edx
+	push %ds
+	push %es
+	push %fs
+	movl $0x10,%eax
+	mov %ax,%ds
+	mov %ax,%es
+	movl $0x17,%eax
+	mov %ax,%fs
+	movb $0x20,%al
+	outb %al,$0xA0		# EOI to interrupt controller #1
+	jmp 1f			# give port chance to breathe
+	1:	jmp 1f
+	1:	xorl %edx,%edx
+	xchgl do_hd,%edx
+	testl %edx,%edx
+	jne 1f
+	movl $unexpected_hd_interrupt,%edx
+	1:	outb %al,$0x20
+	call *%edx		# "interesting" way of handling intr.
+	pop %fs
+	pop %es
+	pop %ds
+	popl %edx
+	popl %ecx
+	popl %eax
+	iret
