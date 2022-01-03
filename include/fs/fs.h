@@ -151,5 +151,11 @@ extern int nr_buffers;
 extern void brelse(struct buffer_head * buf);
 extern struct buffer_head * bread(int dev,int block);
 extern void ll_rw_block(int rw, struct buffer_head * bh);
+extern void mount_root(void);
+extern int ROOT_DEV;
+
+extern struct m_inode * iget(int dev,int nr);
+extern void free_inode(struct m_inode * inode);
+extern struct super_block * get_super(int dev);
 
 #endif

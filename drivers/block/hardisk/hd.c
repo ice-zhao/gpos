@@ -125,7 +125,8 @@ int sys_setup(void * BIOS)
         /* printk("Partition table%s ok.\n\r",(NR_HD>1)?"s":""); */
     }
 
-
+    mount_root();
+    return 0;
 }
 
 static int drive_busy(void)

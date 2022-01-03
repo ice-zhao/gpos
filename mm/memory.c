@@ -7,10 +7,35 @@
 #include <asm/include/system.h>
 #include <string.h>
 #include <fs/fs.h>
+#include <kernel/kernel.h>
 
 #define invalidate() \
     __asm__("movl %%eax,%%cr3"::"a" (&_pg_dir))
 
+
+static long memory_end = 0;
+static const long buffer_memory_end = 4*1024*1024;    //4M
+static long main_memory_start = 0;
+static long HIGH_MEMORY = 0;
+static long PAGING_MEMORY = 0;
+static long PAGING_PAGES = 0;
+static unsigned long mem_map [ MM_BITMAPS ] = {0,};
+static const unsigned long mm_pages_start = buffer_memory_end;
+static unsigned long mm_pages_size = 4*1024*1024;   //4M
+struct page *mm_pages =(struct page *)mm_pages_start;
+
+
+/*
+ * Free a page of memory at physical address 'addr'. Used by
+ * 'free_page_tables()'
+ */
+void free_page(unsigned long addr)
+{
+	if (addr < LOW_MEM) return;
+	if (addr >= HIGH_MEMORY)
+		panic("trying to free nonexistent page\n");
+    clear_mem_map(addr);
+}
 
 
 /*
@@ -72,17 +97,6 @@ int copy_page_tables(unsigned long from,unsigned long to,long size)
 }
 
 
-static long memory_end = 0;
-static const long buffer_memory_end = 4*1024*1024;    //4M
-static long main_memory_start = 0;
-static long HIGH_MEMORY = 0;
-static long PAGING_MEMORY = 0;
-static long PAGING_PAGES = 0;
-static unsigned long mem_map [ MM_BITMAPS ] = {0,};
-static const unsigned long mm_pages_start = buffer_memory_end;
-static unsigned long mm_pages_size = 4*1024*1024;   //4M
-struct page *mm_pages =(struct page *)mm_pages_start;
-
 void mm_init(void) {
     memory_end = mach_data.total_mem_size<<10;
     main_memory_start = mm_pages_start + mm_pages_size;
@@ -121,9 +135,11 @@ void set_mem_map(unsigned long addr) {
 void clear_mem_map(unsigned long addr) {
     struct mm_bitpos bp;
     if(!get_bitpos(addr, &bp)) {
-        if(--mms_page(addr)->_refcount == 0) {
+        --mms_page(addr)->_refcount;
+        if(mms_page(addr)->_refcount == 0) {
             mem_map[bp.pos] &= ~(1<<bp.idx);
-        }
+        } else if (mms_page(addr)->_refcount < 0)
+            panic("Try to free free page.\n");
     }
 }
 

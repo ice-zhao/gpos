@@ -21,15 +21,16 @@ output-fs := $(output)/fs
 
 CFLAGS += -I $(BASE)/arch/$(ARCH)/ -I $(BASE)/include/
 
-all:  kernel.bin
 
-objs-kernel := $(output-kernel)/schedule.o $(output-kernel)/fork.o $(output-kernel)/trap.o
+objs-kernel := $(output-kernel)/schedule.o $(output-kernel)/fork.o $(output-kernel)/trap.o $(output-kernel)/panic.o
 objs-mm := $(output-mm)/heap.o $(output-mm)/memory.o $(output-mm)/page.o
 objs-lib := $(output-lib)/errno.o
 objs := asm/iprintk.o bss.o main.o asm/system_call.o machine.o
 objs-drivers := $(output-hd-drivers)/hd.o $(output-hd-drivers)/ll_rw_blk.o
-objs-fs := $(output-fs)/buffer.o
+objs-fs := $(output-fs)/buffer.o $(output-fs)/super.o $(output-fs)/file_table.o $(output-fs)/inode.o $(output-fs)/bitmap.o
 objs-all := $(objs-kernel) $(objs-mm) $(objs-lib) $(objs-drivers) $(objs-fs)
+
+all:  kernel.bin
 
 asm/system_call.o: asm/system_call.S $(BASE)/include/kernel/sys.h $(BASE)/include/kernel/schedule.h
 	$(CC) $(ASMKFLAGS) -o $@ -c $<
@@ -65,3 +66,6 @@ install: kernel.bin
 
 clean:
 	rm -rf asm/kernel.elf kernel.bin asm/head.o $(objs)
+
+
+.PHONY: all clean

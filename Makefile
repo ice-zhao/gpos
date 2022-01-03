@@ -19,8 +19,8 @@ kernel:
 	make all -C ./kernel
 	make all -C ./mm
 	make all -C ./drivers
-	make all -C ./arch/x86
 	make all -C ./fs
+	make all -C ./arch/x86
 
 install: install_bootloader install_kernel
 

@@ -5,7 +5,7 @@
 
 struct page {
     unsigned long flags;
-    unsigned long _refcount;
+    long _refcount;
 };
 
 #endif

@@ -60,6 +60,8 @@ struct task_struct {
     long counter;
 	long priority;
     long pid;
+	struct m_inode * pwd;
+	struct m_inode * root;
 
 /* ldt for this task 0 - zero 1 - cs 2 - ds&ss */
 	struct desc_struct ldt[3];
@@ -74,6 +76,7 @@ struct task_struct {
 #define INIT_TASK {\
     0,15,   /*state, counter*/ \
     15,0, /*priority, pid*/ \
+    0,0, /*pwd, root*/ \
     {\
         {0,0}, \
 /* ldt */	{0x3FFF,0xc0fa00},        /*code segment, DPL:3, G:1,D/B:1-32bit S:1-code/data*/ \

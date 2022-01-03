@@ -2,6 +2,7 @@
 #include <mm/mm.h>
 #include <asm/include/system.h>
 #include <print.h>
+#include <kernel/kernel.h>
 
 
 struct buffer_head * start_buffer = (struct buffer_head *)LOW_MEM;
@@ -192,9 +193,7 @@ void brelse(struct buffer_head * buf)
 		return;
 	wait_on_buffer(buf);
 	if (!(buf->b_count--)) {
-		/* panic("Trying to free free buffer"); */
-		iprintk("Trying to free free buffer");
-        for(;;);
+		panic("Trying to free free buffer\n");
     }
 	wake_up(&buffer_wait);
 }

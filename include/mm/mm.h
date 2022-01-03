@@ -9,7 +9,7 @@
 #define MAP_NR(addr) (((addr)-LOW_MEM)>>12)
 #define USED 100
 #define MM_BITMAPS      512     //64M, one long stands for 128K(32bit*4K), 128K*8(long)=1M, 64M*8=512(long)
-#define MM_PAGES        16384       //64M
+#define MM_PAGES        16384       //for 64M memory size; 16384*8byte(sizeof(struct page))=128KB occupy pages area
 #define MM_ERROR       -1
 
 void mm_init(void);
@@ -17,6 +17,7 @@ void mm_init(void);
 void set_mem_map(unsigned long addr);
 void clear_mem_map(unsigned long addr);
 unsigned long get_free_page(void);
+extern void free_page(unsigned long addr);
 
 extern struct page *mm_pages;
 

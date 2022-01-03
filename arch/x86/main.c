@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <machine.h>
 #include <kernel/trap.h>
+#include <fs/fs.h>
 
 /*
  * we need this inline - forking from kernel space will result
@@ -76,6 +77,7 @@ void process0(void) {
 
 void main(void)
 {
+    ROOT_DEV=0x301;     /*major:3, minor:1 hard disk, first partition*/
     init_machine_data();
     init_bss_section();
     drive_info = DRIVE_INFO;
