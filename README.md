@@ -43,6 +43,10 @@ build up a new Operating System from scratch.
 
    File system buffer.
    
+   4.2 挂载硬盘根文件系统
+   
+   mount root file system from hard disk.
+   
 6. 驱动程序
 
    Drivers
