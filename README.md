@@ -25,6 +25,10 @@ build up a new Operating System from scratch.
      3.2 setup() 系统调用
    
      Add setup() system call.
+     
+     3.3 open() 系统调用
+   
+     Add open() system call.
 4. 内存管理
 
    4.1 添加内存管理
