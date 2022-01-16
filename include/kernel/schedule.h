@@ -2,6 +2,8 @@
 #define __SCHEDULE_H__
 #include <kernel/head.h>
 #include <mm/mm.h>
+#include <fs/fs.h>
+
 
 #define HZ 100
 
@@ -59,9 +61,16 @@ struct task_struct {
     /* scheduler uses */
     long counter;
 	long priority;
-    long pid;
+	long pid,father,pgrp,session,leader;
+/* file system info */
+	int tty;		/* -1 if no tty, so it must be signed */
+	unsigned short umask;
 	struct m_inode * pwd;
 	struct m_inode * root;
+    unsigned long close_on_exec;
+	unsigned short uid,euid,suid;
+	unsigned short gid,egid,sgid;
+    struct file * filp[NR_OPEN];
 
 /* ldt for this task 0 - zero 1 - cs 2 - ds&ss */
 	struct desc_struct ldt[3];
@@ -74,9 +83,13 @@ struct task_struct {
  *  INIT_TASK is used to set up the first task table.
  */
 #define INIT_TASK {\
-    0,15,   /*state, counter*/ \
-    15,0, /*priority, pid*/ \
-    0,0, /*pwd, root*/ \
+    0,15,   /* state, counter */ \
+    15,0,-1,0,0,0,0,0, /* priority, pid, father, pgrp, session, leader, tty, umask */  \
+    0,0, /* pwd, root */  \
+    0, /* close_on_exec  */                 \
+    0,0,0, /* uid,euid,suid  */             \
+    0,0,0, /* gid,egid,sgid  */             \
+    {NULL,}, /* filp */                     \
     {\
         {0,0}, \
 /* ldt */	{0x3FFF,0xc0fa00},        /*code segment, DPL:3, G:1,D/B:1-32bit S:1-code/data*/ \
@@ -176,5 +189,7 @@ __asm__ ("push %%edx\n\t" \
 
 extern void sleep_on(struct task_struct ** p);
 extern void wake_up(struct task_struct **p);
+
+#define CURRENT_TIME    (0)//(startup_time+jiffies/HZ)
 
 #endif

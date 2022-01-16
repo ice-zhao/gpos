@@ -1,3 +1,6 @@
+#ifndef __SYS_H__
+#define __SYS_H__
+
 extern int sys_setup();
 extern int sys_exit();
 extern int sys_fork();
@@ -84,3 +87,5 @@ sys_lock, sys_ioctl, sys_fcntl, sys_mpx, sys_setpgid, sys_ulimit,
 sys_uname, sys_umask, sys_chroot, sys_ustat, sys_dup2, sys_getppid,
 sys_getpgrp, sys_setsid, sys_sigaction, sys_sgetmask, sys_ssetmask,
 sys_setreuid,sys_setregid };
+
+#endif

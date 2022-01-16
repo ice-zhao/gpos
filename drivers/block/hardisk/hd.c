@@ -4,6 +4,7 @@
 #include <fs/fs.h>
 #include <asm/include/system.h>
 #include <kernel/schedule.h>
+#include <kernel/kernel.h>
 
 #define MAJOR_NR 3
 #include <block/include/blk.h>
@@ -102,15 +103,13 @@ int sys_setup(void * BIOS)
 		if (!(bh = bread(0x300 + drive*5,0))) {
 			/* printk("Unable to read partition table of drive %d\n\r", drive); */
 			iprintk("Unable to read partition table of drive\n");
-			/* panic(""); */
-            for(;;);
+			panic("\n");
 		}
 		if (bh->b_data[510] != 0x55 || (unsigned char)
 		    bh->b_data[511] != 0xAA) {
 			/* printk("Bad partition table on drive %d\n\r",drive); */
 			iprintk("Bad partition table on drive\n\r");
-			/* panic(""); */
-            for(;;);
+			panic("\n");
 		}
 		p = 0x1BE + (void *)bh->b_data;
 		for (i=1;i<5;i++,p++) {
@@ -310,8 +309,7 @@ void do_hd_request(void)
 		hd_out(dev,nsect,sec,head,cyl,WIN_READ,&read_intr);
 	} else
     {
-		iprintk("unknown hd-command\n");
-        for(;;);
+		panic("unknown hd-command\n");
     }
 }
 

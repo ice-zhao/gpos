@@ -24,11 +24,11 @@ CFLAGS += -I $(BASE)/arch/$(ARCH)/ -I $(BASE)/include/
 
 objs-kernel := $(output-kernel)/schedule.o $(output-kernel)/fork.o $(output-kernel)/trap.o $(output-kernel)/panic.o
 objs-mm := $(output-mm)/heap.o $(output-mm)/memory.o $(output-mm)/page.o
-objs-lib := $(output-lib)/errno.o
 objs := asm/iprintk.o bss.o main.o asm/system_call.o machine.o
 objs-drivers := $(output-hd-drivers)/hd.o $(output-hd-drivers)/ll_rw_blk.o
-objs-fs := $(output-fs)/buffer.o $(output-fs)/super.o $(output-fs)/file_table.o $(output-fs)/inode.o $(output-fs)/bitmap.o
-objs-all := $(objs-kernel) $(objs-mm) $(objs-lib) $(objs-drivers) $(objs-fs)
+objs-fs := $(output-fs)/buffer.o $(output-fs)/super.o $(output-fs)/file_table.o $(output-fs)/inode.o $(output-fs)/bitmap.o \
+			$(output-fs)/namei.o $(output-fs)/truncate.o $(output-fs)/open.o
+objs-all := $(objs-kernel) $(objs-mm) $(objs-drivers) $(objs-fs)
 
 all:  kernel.bin
 
@@ -51,7 +51,7 @@ machine.o: machine.c
 	$(CC) $(CFLAGS) -o $@ -c $^
 
 asm/kernel.elf: asm/head.o $(objs) $(objs-all)
-	$(LD) -T$(KERNELLD) $(LDFLAGS) $^ -o $@
+	$(LD) -T$(KERNELLD) $(LDFLAGS) $^ -l$(libname) -o $@
 	$(Q)nm $@ | grep -v '\(compiled\)\|\(\.o$$\)\|\( [aU] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)'| sort > kernel.map
 
 
@@ -65,7 +65,7 @@ install: kernel.bin
 	sudo umount $(floppy)
 
 clean:
-	rm -rf asm/kernel.elf kernel.bin asm/head.o $(objs)
+	$(Q)rm -rf asm/kernel.elf kernel.bin asm/head.o $(objs)
 
 
 .PHONY: all clean

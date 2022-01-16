@@ -1,6 +1,5 @@
 #ifndef __FS_H__
 #define __FS_H__
-#include <kernel/schedule.h>
 #include <mm/mm.h>
 #include <sys/types.h>
 
@@ -73,6 +72,11 @@ struct d_inode {
 	unsigned short i_zone[9];
 };
 
+/*
+i_zone[9]: 8,9 entries contain indirect block number.
+i_dev: when used by mount as mount point, value is target dev id.
+i_num: when used by mount as mount-point, value is root inode number of target fs.
+ */
 struct m_inode {
 	unsigned short i_mode;
 	unsigned short i_uid;
@@ -118,7 +122,7 @@ struct super_block {
 	struct buffer_head * s_zmap[8];
 	unsigned short s_dev;
 	struct m_inode * s_isup;
-	struct m_inode * s_imount;
+	struct m_inode * s_imount;  //save the parent fs's inode
 	unsigned long s_time;
 	struct task_struct * s_wait;
 	unsigned char s_lock;
@@ -157,5 +161,18 @@ extern int ROOT_DEV;
 extern struct m_inode * iget(int dev,int nr);
 extern void free_inode(struct m_inode * inode);
 extern struct super_block * get_super(int dev);
+extern int new_block(int dev);
+extern void iput(struct m_inode * inode);
+extern int bmap(struct m_inode * inode,int block);
+extern struct m_inode * new_inode(int dev);
+extern int create_block(struct m_inode * inode, int block);
+extern struct buffer_head * getblk(int dev,int block);
+extern struct m_inode * get_empty_inode(void);
+extern void truncate(struct m_inode * inode);
+extern struct buffer_head * get_hash_table(int dev, int block);
+extern void free_block(int dev, int block);
+extern int open_namei(const char * pathname, int flag, int mode,
+                      struct m_inode ** res_inode);
+
 
 #endif

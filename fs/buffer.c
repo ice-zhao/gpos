@@ -3,6 +3,7 @@
 #include <asm/include/system.h>
 #include <print.h>
 #include <kernel/kernel.h>
+#include <kernel/schedule.h>
 
 
 struct buffer_head * start_buffer = (struct buffer_head *)LOW_MEM;
@@ -25,9 +26,7 @@ static inline void remove_from_queues(struct buffer_head * bh)
 		hash(bh->b_dev,bh->b_blocknr) = bh->b_next;
 /* remove from free list */
 	if (!(bh->b_prev_free) || !(bh->b_next_free)) {
-		/* panic("Free block list corrupted"); */
-		iprintk("Free block list corrupted");
-        for(;;);
+		panic("Free block list corrupted\n");
     }
 	bh->b_prev_free->b_next_free = bh->b_next_free;
 	bh->b_next_free->b_prev_free = bh->b_prev_free;
@@ -207,9 +206,7 @@ struct buffer_head * bread(int dev,int block)
 	struct buffer_head * bh;
 
 	if (!(bh=getblk(dev,block))) {
-        /* panic("bread: getblk returned NULL\n"); */
-        iprintk("bread: getblk returned NULL\n");
-        for(;;);
+        panic("bread: getblk returned NULL\n");
     }
 	if (bh->b_uptodate)
 		return bh;

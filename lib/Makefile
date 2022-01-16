@@ -1,18 +1,23 @@
 include $(BASE)/arch/$(ARCH)/asm/include/Makefile
 
 
-objs := errno.o
+obj-lib = lib$(libname).a
 
-all: lib.o
+objs := errno.o open.o
+
+all: $(obj-lib)
 
 errno.o: errno.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+open.o: open.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
-lib.o: $(objs)
+$(obj-lib): $(objs)
+	$(AR) --target=$(ar_target) crs $@ $^
 
 clean:
-	rm -rf $(objs)
+	rm -rf $(objs) $(obj-lib)
 
 
 .PHONY: all clean

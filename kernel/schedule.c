@@ -134,7 +134,6 @@ void wake_up(struct task_struct **p)
 int sys_exit(){};
 int sys_read(){};
 int sys_write(){};
-int sys_open(){};
 int sys_close(){};
 int sys_waitpid(){};
 int sys_creat(){};

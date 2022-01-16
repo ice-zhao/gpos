@@ -143,6 +143,7 @@ return -1; \
 #endif  //__LIBRARY__
 
 static int fork(void);
+int open(const char * filename, int flag, ...);
 
 
 #endif

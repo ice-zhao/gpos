@@ -12,6 +12,7 @@
 #include <machine.h>
 #include <kernel/trap.h>
 #include <fs/fs.h>
+#include <fcntl.h>
 
 /*
  * we need this inline - forking from kernel space will result
@@ -37,6 +38,7 @@ extern void hd_init(void);
 extern void blk_dev_init(void);
 /* hard disk info */
 struct drive_info { char dummy[32]; } drive_info;
+void init(void);
 
 /*
  * This is set up by the boot-loader.
@@ -61,7 +63,7 @@ void process0(void) {
     long start0=jiffies;
 
     if(!fork()) {       //create second process 1
-        setup(&drive_info);
+        init();
         process1();
     }
 
@@ -94,4 +96,10 @@ void main(void)
     move_to_user_mode(stack_top);
 
     process0();     //here is process 0
+}
+
+
+void init(void) {
+    setup(&drive_info);
+	(void) open("/dev/tty0",O_RDWR,0);
 }

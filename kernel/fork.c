@@ -68,6 +68,8 @@ int copy_process(int nr,long ebp,long edi,long esi,long gs,long none,
 	*p = *current;	/* NOTE! this doesn't copy the supervisor stack */
 	p->state = TASK_UNINTERRUPTIBLE;
 	p->pid = last_pid;
+    p->father = current->pid;
+	p->leader = 0;		/* process leadership doesn't inherit */
 	p->counter = p->priority;
 	p->tss.back_link = 0;
 	p->tss.esp0 = PAGE_SIZE + (long)p;
