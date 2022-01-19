@@ -13,6 +13,7 @@
 #include <kernel/trap.h>
 #include <fs/fs.h>
 #include <fcntl.h>
+#include <kernel/tty.h>
 
 /*
  * we need this inline - forking from kernel space will result
@@ -90,6 +91,7 @@ void main(void)
     schedule_init();
     blk_dev_init();
     hd_init();
+    tty_init();
     sti();
 
     unsigned long stack_top = get_free_page() + 4096;

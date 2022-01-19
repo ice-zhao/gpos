@@ -17,6 +17,8 @@ output-kernel := $(output)/kernel
 output-mm := $(output)/mm
 output-lib := $(output)/lib
 output-hd-drivers := $(output)/drivers/block/hardisk
+output-char-drivers := $(output)/drivers/char
+output-tty-drivers := $(output-char-drivers)/tty
 output-fs := $(output)/fs
 
 CFLAGS += -I $(BASE)/arch/$(ARCH)/ -I $(BASE)/include/
@@ -25,7 +27,7 @@ CFLAGS += -I $(BASE)/arch/$(ARCH)/ -I $(BASE)/include/
 objs-kernel := $(output-kernel)/schedule.o $(output-kernel)/fork.o $(output-kernel)/trap.o $(output-kernel)/panic.o
 objs-mm := $(output-mm)/heap.o $(output-mm)/memory.o $(output-mm)/page.o
 objs := asm/iprintk.o bss.o main.o asm/system_call.o machine.o
-objs-drivers := $(output-hd-drivers)/hd.o $(output-hd-drivers)/ll_rw_blk.o
+objs-drivers := $(output-hd-drivers)/hd.o $(output-hd-drivers)/ll_rw_blk.o $(output-tty-drivers)/tty_io.o
 objs-fs := $(output-fs)/buffer.o $(output-fs)/super.o $(output-fs)/file_table.o $(output-fs)/inode.o $(output-fs)/bitmap.o \
 			$(output-fs)/namei.o $(output-fs)/truncate.o $(output-fs)/open.o
 objs-all := $(objs-kernel) $(objs-mm) $(objs-drivers) $(objs-fs)

@@ -144,7 +144,7 @@ LABEL_FILE_LOADED:
 	mov	$BaseOfLoader, %ax	#base address of machine data
 	mov	%ax, %ds
 	mov	$0x03, %ah	# read cursor pos
-	xor	%bh, %bh
+	xor	%bh, %bh    # video page
 	int	$0x10		# save it in known place, con_init fetches
 	mov	%dx, %ds:0	# it from 0x90000.
 
@@ -170,13 +170,20 @@ LABEL_FILE_LOADED:
 .MemChkFail:
 .MemChkOk:
 
-
 # Get video-card data:
 	mov	$0x0f, %ah
 	int	$0x10
 	mov	%bx, %ds:4	# bh = display page
 	mov	%ax, %ds:6	# al = video mode, ah = window width
 
+/*
+   	BH = 0 if color mode in effect
+	   = 1 if mono mode in effect
+	BL = 0 if 64k EGA memory
+	   = 1 if 128k EGA memory
+	   = 2 if 192k EGA memory
+	   = 3 if 256k EGA memory
+*/
 # check for EGA/VGA and some config parameters
 	mov	$0x12, %ah
 	mov	$0x10, %bl
@@ -184,7 +191,6 @@ LABEL_FILE_LOADED:
 	mov	%ax, %ds:8
 	mov	%bx, %ds:10
 	mov	%cx, %ds:12
-
 
 # Get hd0 data
     push %ds
