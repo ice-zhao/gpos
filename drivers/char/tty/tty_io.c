@@ -1,165 +1,162 @@
+#include <kernel/schedule.h>
+#include <kernel/tty.h>
+#include <termios.h>
+#include <errno.h>
+#include <ctype.h>
+#include <signal.h>
 
+#define ALRMMASK (1<<(SIGALRM-1))
+#define KILLMASK (1<<(SIGKILL-1))
+#define INTMASK (1<<(SIGINT-1))
+#define QUITMASK (1<<(SIGQUIT-1))
+#define TSTPMASK (1<<(SIGTSTP-1))
 
+#define _L_FLAG(tty,f)	((tty)->termios.c_lflag & f)
+#define _I_FLAG(tty,f)	((tty)->termios.c_iflag & f)
+#define _O_FLAG(tty,f)	((tty)->termios.c_oflag & f)
 
+#define L_CANON(tty)	_L_FLAG((tty),ICANON)
+#define L_ISIG(tty)	_L_FLAG((tty),ISIG)
+#define L_ECHO(tty)	_L_FLAG((tty),ECHO)
+#define L_ECHOE(tty)	_L_FLAG((tty),ECHOE)
+#define L_ECHOK(tty)	_L_FLAG((tty),ECHOK)
+#define L_ECHOCTL(tty)	_L_FLAG((tty),ECHOCTL)
+#define L_ECHOKE(tty)	_L_FLAG((tty),ECHOKE)
 
-/*
- * These are set up by the setup-routine at boot-time:
- */
+#define I_UCLC(tty)	_I_FLAG((tty),IUCLC)
+#define I_NLCR(tty)	_I_FLAG((tty),INLCR)
+#define I_CRNL(tty)	_I_FLAG((tty),ICRNL)
+#define I_NOCR(tty)	_I_FLAG((tty),IGNCR)
 
-#define ORIG_X			(*(unsigned char *)0x90000)     //line
-#define ORIG_Y			(*(unsigned char *)0x90001)     //column
-#define ORIG_VIDEO_PAGE		(*(unsigned short *)0x90004)
-#define ORIG_VIDEO_MODE		((*(unsigned short *)0x90006) & 0xff)
-#define ORIG_VIDEO_COLS 	(((*(unsigned short *)0x90006) & 0xff00) >> 8)
-#define ORIG_VIDEO_LINES	(25)
-#define ORIG_VIDEO_EGA_AX	(*(unsigned short *)0x90008)
-#define ORIG_VIDEO_EGA_BX	(*(unsigned short *)0x9000a)
-#define ORIG_VIDEO_EGA_CX	(*(unsigned short *)0x9000c)
+#define O_POST(tty)	_O_FLAG((tty),OPOST)
+#define O_NLCR(tty)	_O_FLAG((tty),ONLCR)
+#define O_CRNL(tty)	_O_FLAG((tty),OCRNL)
+#define O_NLRET(tty)	_O_FLAG((tty),ONLRET)
+#define O_LCUC(tty)	_O_FLAG((tty),OLCUC)
 
-#define VIDEO_TYPE_MDA		0x10	/* Monochrome Text Display	*/
-#define VIDEO_TYPE_CGA		0x11	/* CGA Display 			*/
-#define VIDEO_TYPE_EGAM		0x20	/* EGA/VGA in Monochrome Mode	*/
-#define VIDEO_TYPE_EGAC		0x21	/* EGA/VGA in Color Mode	*/
+struct tty_struct tty_table[] = {
+	{
+		{ICRNL,		/* change incoming CR to NL */
+         OPOST|ONLCR,	/* change outgoing NL to CRNL */
+         0,
+         ISIG | ICANON | ECHO | ECHOCTL | ECHOKE,
+         0,		/* console termio */
+         INIT_C_CC},
+		0,			/* initial pgrp */
+		0,			/* initial stopped */
+		con_write,
+		{0,0,0,0,""},		/* console read-queue */
+		{0,0,0,0,""},		/* console write-queue */
+		{0,0,0,0,""}		/* console secondary queue */
+	}
+};
 
-#define NPAR 16
+struct tty_queue * table_list[]={
+	&tty_table[0].read_q, &tty_table[0].write_q
+	};
 
-extern void keyboard_interrupt(void);
-
-static unsigned char	video_type;		/* Type of display being used	*/
-static unsigned long	video_num_columns;	/* Number of text columns	*/
-static unsigned long	video_size_row;		/* Bytes per row		*/
-static unsigned long	video_num_lines;	/* Number of test lines		*/
-static unsigned char	video_page;		/* Initial video page		*/
-static unsigned long	video_mem_start;	/* Start of video RAM		*/
-static unsigned long	video_mem_end;		/* End of video RAM (sort of)	*/
-static unsigned short	video_port_reg;		/* Video register select port	*/
-static unsigned short	video_port_val;		/* Video register value port	*/
-static unsigned short	video_erase_char;	/* Char+Attrib to erase with	*/
-
-static unsigned long	origin;		/* Used for EGA/VGA fast scroll	*/
-static unsigned long	scr_end;	/* Used for EGA/VGA fast scroll	*/
-static unsigned long	pos;
-static unsigned long	x,y;
-static unsigned long	top,bottom;
-static unsigned long	state=0;
-static unsigned long	npar,par[NPAR];
-static unsigned long	ques=0;
-static unsigned char	attr=0x07;
-
-/*
- * this is what the terminal answers to a ESC-Z or csi0c
- * query (= vt100 response).
- */
-#define RESPONSE "\033[?1;2c"
-
-/* NOTE! gotoxy thinks x==video_num_columns is ok */
-static inline void gotoxy(unsigned int new_x,unsigned int new_y)
+void tty_intr(struct tty_struct * tty, int mask)
 {
-	if (new_x > video_num_columns || new_y >= video_num_lines)
+	int i;
+
+	if (tty->pgrp <= 0)
 		return;
-	x=new_x;
-	y=new_y;
-	pos=origin + y*video_size_row + (x<<1);
+	/* for (i=0;i<NR_TASKS;i++) */
+	/* 	if (task[i] && task[i]->pgrp==tty->pgrp) */
+	/* 		task[i]->signal |= mask; */
 }
 
-/*
- *  void con_init(void);
- *
- * This routine initalizes console interrupts, and does nothing
- * else. If you want the screen to clear, call tty_write with
- * the appropriate escape-sequece.
- *
- * Reads the information preserved by setup.s to determine the current display
- * type and sets everything accordingly.
- */
-void con_init(void)
+void copy_to_cooked(struct tty_struct * tty)
 {
-	register unsigned char a;
-	char *display_desc = "????";
-	char *display_ptr;
+	signed char c;
 
-	video_num_columns = ORIG_VIDEO_COLS;
-	video_size_row = video_num_columns * 2;
-	video_num_lines = ORIG_VIDEO_LINES;
-	video_page = ORIG_VIDEO_PAGE;
-	video_erase_char = 0x0720;
-
-	if (ORIG_VIDEO_MODE == 7)			/* Is this a monochrome display? */
-	{
-		video_mem_start = 0xb0000;
-		video_port_reg = 0x3b4;
-		video_port_val = 0x3b5;
-		if ((ORIG_VIDEO_EGA_BX & 0xff) != 0x10)
-		{
-			video_type = VIDEO_TYPE_EGAM;
-			video_mem_end = 0xb8000;
-			display_desc = "EGAm";
+	while (!EMPTY(tty->read_q) && !FULL(tty->secondary)) {
+		GETCH(tty->read_q,c);
+		if (c==13)
+			if (I_CRNL(tty))
+				c=10;
+			else if (I_NOCR(tty))
+				continue;
+			else ;
+		else if (c==10 && I_NLCR(tty))
+			c=13;
+		if (I_UCLC(tty))
+			c=tolower(c);
+		if (L_CANON(tty)) {
+			if (c==KILL_CHAR(tty)) {
+				/* deal with killing the input line */
+				while(!(EMPTY(tty->secondary) ||
+				        (c=LAST(tty->secondary))==10 ||
+				        c==EOF_CHAR(tty))) {
+					if (L_ECHO(tty)) {
+						if (c<32)
+							PUTCH(127,tty->write_q);
+						PUTCH(127,tty->write_q);
+						tty->write(tty);
+					}
+					DEC(tty->secondary.head);
+				}
+				continue;
+			}
+			if (c==ERASE_CHAR(tty)) {
+				if (EMPTY(tty->secondary) ||
+				   (c=LAST(tty->secondary))==10 ||
+				   c==EOF_CHAR(tty))
+					continue;
+				if (L_ECHO(tty)) {
+					if (c<32)
+						PUTCH(127,tty->write_q);
+					PUTCH(127,tty->write_q);
+					tty->write(tty);
+				}
+				DEC(tty->secondary.head);
+				continue;
+			}
+			if (c==STOP_CHAR(tty)) {
+				tty->stopped=1;
+				continue;
+			}
+			if (c==START_CHAR(tty)) {
+				tty->stopped=0;
+				continue;
+			}
 		}
-		else
-		{
-			video_type = VIDEO_TYPE_MDA;
-			video_mem_end	= 0xb2000;
-			display_desc = "*MDA";
+		if (L_ISIG(tty)) {
+			if (c==INTR_CHAR(tty)) {
+				tty_intr(tty,INTMASK);
+				continue;
+			}
+			if (c==QUIT_CHAR(tty)) {
+				tty_intr(tty,QUITMASK);
+				continue;
+			}
 		}
+		if (c==10 || c==EOF_CHAR(tty))
+			tty->secondary.data++;
+		if (L_ECHO(tty)) {
+			if (c==10) {
+				PUTCH(10,tty->write_q);
+				PUTCH(13,tty->write_q);
+			} else if (c<32) {
+				if (L_ECHOCTL(tty)) {
+					PUTCH('^',tty->write_q);
+					PUTCH(c+64,tty->write_q);
+				}
+			} else
+				PUTCH(c,tty->write_q);
+			tty->write(tty);
+		}
+		PUTCH(c,tty->secondary);
 	}
-	else								/* If not, it is color. */
-	{
-		video_mem_start = 0xb8000;
-		video_port_reg	= 0x3d4;
-		video_port_val	= 0x3d5;
-		if ((ORIG_VIDEO_EGA_BX & 0xff) != 0x10)
-		{
-			video_type = VIDEO_TYPE_EGAC;   //now, go here, use 16K buffer
-			video_mem_end = 0xbc000;
-			display_desc = "EGAc";
-		}
-		else
-		{
-			video_type = VIDEO_TYPE_CGA;
-			video_mem_end = 0xba000;
-			display_desc = "*CGA";
-		}
-	}
-
-	/* Let the user known what kind of display driver we are using */
-
-	display_ptr = ((char *)video_mem_start) + video_size_row - 8;
-	while (*display_desc)
-	{
-		*display_ptr++ = *display_desc++;
-		display_ptr++;
-	}
-
-	/* Initialize the variables used for scrolling (mostly EGA/VGA)	*/
-
-	origin	= video_mem_start;
-	scr_end	= video_mem_start + video_num_lines * video_size_row;
-	top	= 0;
-	bottom	= video_num_lines;
-
-	gotoxy(ORIG_X,ORIG_Y);
-	/* set_trap_gate(0x21,&keyboard_interrupt); */
-	/* outb_p(inb_p(0x21)&0xfd,0x21); */
-	/* a=inb_p(0x61); */
-	/* outb_p(a|0x80,0x61); */
-	/* outb(a,0x61); */
+	wake_up(&tty->secondary.proc_list);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+void do_tty_interrupt(int tty)
+{
+	copy_to_cooked(tty_table+tty);
+}
 
 void tty_init(void)
 {
-	/* rs_init(); */
 	con_init();
 }

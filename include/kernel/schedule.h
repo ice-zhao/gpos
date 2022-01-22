@@ -56,6 +56,10 @@ struct tss_struct {
 };
 
 
+/*
+ * state: must be the first member of task_struct. kb.S bases offset to modify it.
+ *
+ */
 struct task_struct {
 	long state;	/* -1 unrunnable, 0 runnable, >0 stopped */
     /* scheduler uses */
@@ -84,7 +88,7 @@ struct task_struct {
  */
 #define INIT_TASK {\
     0,15,   /* state, counter */ \
-    15,0,-1,0,0,0,0,0, /* priority, pid, father, pgrp, session, leader, tty, umask */  \
+    15,0,-1,0,0,0,-1,0, /* priority, pid, father, pgrp, session, leader, tty, umask */  \
     0,0, /* pwd, root */  \
     0, /* close_on_exec  */                 \
     0,0,0, /* uid,euid,suid  */             \
