@@ -58,3 +58,11 @@ build up a new Operating System from scratch.
    6.1 硬盘驱动
    
        Hard disk driver
+       
+   6.2 键盘驱动
+
+       Keyboard driver
+   ![keyboard driver](https://user-images.githubusercontent.com/39359146/150623941-4f5ba464-d7fd-43ce-86e3-7747e25c40ff.PNG)
+
+   
+   
