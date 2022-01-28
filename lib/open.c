@@ -1,6 +1,7 @@
 #define __LIBRARY__
 #include <unistd.h>
 #include <stdarg.h>
+#include <print.h>
 
 int open(const char * filename, int flag, ...)
 {

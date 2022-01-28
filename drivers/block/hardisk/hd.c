@@ -89,7 +89,6 @@ int sys_setup(void * BIOS)
 			NR_HD = 2;
 		else {
 			NR_HD = 1;
-            /* iprintk("NR_HD=1\n"); */
         }
 	else
 		NR_HD = 0;
@@ -101,14 +100,12 @@ int sys_setup(void * BIOS)
 
 	for (drive=0 ; drive<NR_HD ; drive++) {
 		if (!(bh = bread(0x300 + drive*5,0))) {
-			/* printk("Unable to read partition table of drive %d\n\r", drive); */
-			iprintk("Unable to read partition table of drive\n");
+			printk("Unable to read partition table of drive %d\n\r", drive);
 			panic("\n");
 		}
 		if (bh->b_data[510] != 0x55 || (unsigned char)
 		    bh->b_data[511] != 0xAA) {
-			/* printk("Bad partition table on drive %d\n\r",drive); */
-			iprintk("Bad partition table on drive\n\r");
+			printk("Bad partition table on drive %d\n\r",drive);
 			panic("\n");
 		}
 		p = 0x1BE + (void *)bh->b_data;
@@ -120,8 +117,7 @@ int sys_setup(void * BIOS)
 	}
 
     if (NR_HD) {
-        iprintk("Partition table ok\n");
-        /* printk("Partition table%s ok.\n\r",(NR_HD>1)?"s":""); */
+        printk("Partition table%s ok.\n\r",(NR_HD>1)?"s":"");
     }
 
     mount_root();
@@ -139,7 +135,7 @@ static int drive_busy(void)
 	i &= BUSY_STAT | READY_STAT | SEEK_STAT;
 	if (i == (READY_STAT | SEEK_STAT))
 		return(0);
-	iprintk("HD controller times out\n");
+	printk("HD controller times out\n");
 	return(1);
 }
 
@@ -151,10 +147,9 @@ static void reset_controller(void)
 	for(i = 0; i < 100; i++) nop();
 	outb(hd_info[0].ctl & 0x0f ,HD_CMD);
 	if (drive_busy())
-		iprintk("HD-controller still busy.\n");
+		printk("HD-controller still busy.\n");
 	if ((i = inb(HD_ERROR)) != 1)
-		iprintk("HD-controller reset failed.\n");
-		/* printk("HD-controller reset failed: %02x\n\r",i); */
+		printk("HD-controller reset failed: %02x\n\r",i);
 }
 
 static int win_result(void)
@@ -191,12 +186,10 @@ static void hd_out(unsigned int drive,unsigned int nsect,unsigned int sect,
 	register int port asm("dx");
 
 	if (drive>1 || head>15) {
-		iprintk("Trying to write bad sector\n");
-        for(;;);
+		panic("Trying to write bad sector\n");
     }
 	if (!controller_ready()) {
-		iprintk("HD controller not ready");
-        for(;;);
+		panic("HD controller not ready");
     }
 	do_hd = intr_addr;
 	outb_p(hd_info[drive].ctl,HD_CMD);
@@ -305,7 +298,6 @@ void do_hd_request(void)
 		}
 		port_write(HD_DATA,CURRENT->buffer,256);
 	} else if (CURRENT->cmd == READ) {
-        /* iprintk("read hd command.\n"); */
 		hd_out(dev,nsect,sec,head,cyl,WIN_READ,&read_intr);
 	} else
     {
@@ -315,7 +307,7 @@ void do_hd_request(void)
 
 void unexpected_hd_interrupt(void)
 {
-	iprintk("Unexpected HD interrupt\n");
+	printk("Unexpected HD interrupt\n");
 }
 
 void hd_init(void)

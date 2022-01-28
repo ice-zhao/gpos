@@ -34,7 +34,6 @@ static inline _syscall0(int,pause)
 static inline _syscall1(int,setup,void *,BIOS)
 static inline _syscall0(int,sync)
 
-extern void schedule(void);
 extern void hd_init(void);
 extern void blk_dev_init(void);
 /* hard disk info */
@@ -54,7 +53,7 @@ void process1(void) {
     for(;;) {
         long end=jiffies;
         if(end - start1 > 600) {
-            iprintk("process 1 is running now! \n");
+            /* iprintk("process 1 is running now! \n"); */
             start1 = end;
         }
     }
@@ -71,7 +70,7 @@ void process0(void) {
     for(;;) {
         long end=jiffies;
         if(end - start0 > 300) {
-            iprintk("process 0 is running now! \n");
+            /* iprintk("process 0 is running now! \n"); */
             start0 = end;
         }
     }

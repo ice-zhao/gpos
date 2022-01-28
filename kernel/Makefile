@@ -2,7 +2,7 @@
 include $(BASE)/arch/$(ARCH)/asm/include/Makefile
 
 output := $(BASE)/$(DEST)
-objs := kernel.o schedule.o fork.o trap.o panic.o
+objs := kernel.o schedule.o fork.o trap.o panic.o vsprintf.o printk.o
 CFLAGS += -I $(BASE)/arch/$(ARCH)/
 
 
@@ -18,6 +18,12 @@ trap.o: trap.c $(BASE)/include/kernel/*.h $(BASE)/arch/$(ARCH)/asm/include/*.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 panic.o: panic.c $(BASE)/include/kernel/*.h $(BASE)/arch/$(ARCH)/asm/include/*.h
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+vsprintf.o: vsprintf.c $(BASE)/include/kernel/*.h $(BASE)/arch/$(ARCH)/asm/include/*.h
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+printk.o: printk.c $(BASE)/include/kernel/*.h $(BASE)/arch/$(ARCH)/asm/include/*.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 kernel.o: $(objs)

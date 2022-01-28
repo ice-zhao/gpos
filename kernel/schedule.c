@@ -6,6 +6,7 @@
 #include <print.h>
 #include <mm/heap.h>
 #include <print.h>
+#include <kernel/kernel.h>
 
 #define LATCH (1193182/HZ)
 
@@ -121,6 +122,27 @@ void sleep_on(struct task_struct **p)
 	*p = tmp;
 	if (tmp)
 		tmp->state=TASK_RUNNING;
+}
+
+void interruptible_sleep_on(struct task_struct **p)
+{
+	struct task_struct *tmp;
+
+	if (!p)
+		return;
+	if (current == &(init_task.task))
+		panic("task[0] trying to sleep");
+	tmp=*p;
+	*p=current;
+repeat:	current->state = TASK_INTERRUPTIBLE;
+	schedule();
+	if (*p && *p != current) {
+		(*p)->state = TASK_RUNNING;
+		goto repeat;
+	}
+	*p = tmp;
+	if (tmp)
+		tmp->state = TASK_RUNNING;
 }
 
 void wake_up(struct task_struct **p)

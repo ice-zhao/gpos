@@ -73,7 +73,7 @@ system_call:
 	call *sys_call_table(,%eax,4)
 	pushl %eax
 	movl current,%eax
-	cmpl $0,state(%eax)		# state
+	cmpl $0,state(%eax)		# state, 0 is running.
 	jne reschedule
 	cmpl $0,counter(%eax)		# counter
 	je reschedule

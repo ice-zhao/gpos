@@ -96,7 +96,7 @@ struct task_struct {
     {NULL,}, /* filp */                     \
     {\
         {0,0}, \
-/* ldt */	{0x3FFF,0xc0fa00},        /*code segment, DPL:3, G:1,D/B:1-32bit S:1-code/data*/ \
+/* ldt */	{0x3FFF,0xc0fa00},        /*code segment, DPL:3, G:1,D/B:1-32bit S:1-code/data; 0x3FFF(64M space)*/ \
             {0x3FFF,0xc0f200}, /*type: 0:data, W:1-writable*/\
     },           \
     /*tss*/ \
@@ -114,7 +114,7 @@ struct task_struct {
  */
 #define FIRST_TSS_ENTRY 4
 #define FIRST_LDT_ENTRY (FIRST_TSS_ENTRY+1)
-#define _TSS(n) ((((unsigned long) n)<<4)+(FIRST_TSS_ENTRY<<3))
+#define _TSS(n) ((((unsigned long) n)<<4)+(FIRST_TSS_ENTRY<<3))     //TSS selector in gdt
 #define _LDT(n) ((((unsigned long) n)<<4)+(FIRST_LDT_ENTRY<<3))
 #define ltr(n) __asm__("ltr %%ax"::"a" (_TSS(n)))
 #define lldt(n) __asm__("lldt %%ax"::"a" (_LDT(n)))
@@ -193,6 +193,8 @@ __asm__ ("push %%edx\n\t" \
 
 extern void sleep_on(struct task_struct ** p);
 extern void wake_up(struct task_struct **p);
+extern void interruptible_sleep_on(struct task_struct **p);
+extern void schedule(void);
 
 #define CURRENT_TIME    (0)//(startup_time+jiffies/HZ)
 
