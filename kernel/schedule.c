@@ -191,7 +191,6 @@ int sys_kill(){};
 int sys_rename(){};
 int sys_mkdir(){};
 int sys_rmdir(){};
-int sys_dup(){};
 int sys_pipe(){};
 int sys_times(){};
 int sys_prof(){};

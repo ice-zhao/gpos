@@ -103,4 +103,7 @@ void main(void)
 void init(void) {
     setup(&drive_info);
 	(void) open("/dev/tty0",O_RDWR,0);
+    (void) dup(0);
+    (void) dup(0);
+
 }

@@ -1,7 +1,7 @@
 include $(BASE)/arch/$(ARCH)/asm/include/Makefile
 
 
-objs := buffer.o super.o file_table.o bitmap.o inode.o namei.o truncate.o open.o
+objs := buffer.o super.o file_table.o bitmap.o inode.o namei.o truncate.o open.o fcntl.o
 
 all: $(objs)
 
@@ -27,6 +27,9 @@ truncate.o: truncate.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 open.o: open.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+fcntl.o: fcntl.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:

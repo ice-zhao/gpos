@@ -144,6 +144,7 @@ return -1; \
 
 static int fork(void);
 int open(const char * filename, int flag, ...);
+int dup(int fildes);
 
 
 #endif
