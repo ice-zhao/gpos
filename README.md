@@ -29,6 +29,11 @@ build up a new Operating System from scratch.
      3.3 open() 系统调用
    
      Add open() system call.
+     
+     3.4 dup() 系统调用
+     
+     Add dup() system call.
+     
 4. 内存管理
 
    4.1 添加内存管理
