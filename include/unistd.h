@@ -2,6 +2,7 @@
 #define __UNISTD_H__
 
 #include <errno.h>
+#include <sys/types.h>
 
 #define _POSIX_VERSION 198808L
 
@@ -145,6 +146,7 @@ return -1; \
 static int fork(void);
 int open(const char * filename, int flag, ...);
 int dup(int fildes);
+int write(int fildes, const char * buf, off_t count);
 
 
 #endif

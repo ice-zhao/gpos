@@ -29,7 +29,8 @@ objs := asm/iprintk.o bss.o main.o asm/system_call.o machine.o
 objs-drivers := $(output-hd-drivers)/hd.o $(output-hd-drivers)/ll_rw_blk.o
 
 objs-fs := $(output-fs)/buffer.o $(output-fs)/super.o $(output-fs)/file_table.o $(output-fs)/inode.o $(output-fs)/bitmap.o \
-			$(output-fs)/namei.o $(output-fs)/truncate.o $(output-fs)/open.o $(output-fs)/fcntl.o
+			$(output-fs)/namei.o $(output-fs)/truncate.o $(output-fs)/open.o $(output-fs)/fcntl.o $(output-fs)/read_write.o \
+			$(output-fs)/char_dev.o
 objs-all := $(objs-kernel) $(objs-mm) $(objs-drivers) $(objs-fs)
 
 all:  kernel.bin

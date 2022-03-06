@@ -14,6 +14,8 @@
 #include <fs/fs.h>
 #include <fcntl.h>
 #include <kernel/tty.h>
+#include <stdarg.h>
+#include <unistd.h>
 
 /*
  * we need this inline - forking from kernel space will result
@@ -39,6 +41,9 @@ extern void blk_dev_init(void);
 /* hard disk info */
 struct drive_info { char dummy[32]; } drive_info;
 void init(void);
+
+static char printbuf[1024];
+extern int vsprintf();
 
 /*
  * This is set up by the boot-loader.
@@ -100,10 +105,21 @@ void main(void)
 }
 
 
+static int printf(const char *fmt, ...)
+{
+	va_list args;
+	int i;
+
+	va_start(args, fmt);
+	write(1,printbuf,i=vsprintf(printbuf, fmt, args));
+	va_end(args);
+	return i;
+}
+
 void init(void) {
     setup(&drive_info);
 	(void) open("/dev/tty0",O_RDWR,0);
     (void) dup(0);
     (void) dup(0);
-
+    printf("%s\n","user space can use printf now!");
 }

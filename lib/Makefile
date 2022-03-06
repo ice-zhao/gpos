@@ -3,7 +3,7 @@ include $(BASE)/arch/$(ARCH)/asm/include/Makefile
 
 obj-lib = lib$(libname).a
 
-objs := errno.o open.o ctype.o dup.o
+objs := errno.o open.o ctype.o dup.o write.o
 
 all: $(obj-lib)
 
@@ -17,6 +17,9 @@ ctype.o: ctype.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 dup.o: dup.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+write.o: write.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(obj-lib): $(objs)
