@@ -68,3 +68,4 @@ tags
 utils/gpos.img
 drivers/char/tty/keyboard.s
 backup/
+lab/
