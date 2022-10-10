@@ -10,6 +10,15 @@ include arch/$(ARCH)/asm/include/Makefile
 all: bootloader kernel
 
 
+hd_bootloader:
+	$(Q)make all -C ./bootloader/x86/hdisk
+
+hd_bootloader_clean:
+	$(Q)make clean -C ./bootloader/x86/hdisk
+
+hd_bootloader_install:
+	$(Q)make install -C ./bootloader/x86/hdisk
+
 bootloader:
 	$(Q)make all -C ./bootloader/x86
 

@@ -24,7 +24,7 @@ ata0-master: type=disk, path="./utils/hd.img", mode=flat
 
 # choose the boot disk.
 #boot: a
-boot: floppy,disk
+boot: disk,floppy
 
 # where do we send log messages?
 # log: bochsout.txt
