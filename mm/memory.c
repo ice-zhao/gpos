@@ -62,7 +62,7 @@ int copy_page_tables(unsigned long from,unsigned long to,long size)
 	unsigned long this_page;
 	unsigned long * from_dir, * to_dir;
 	unsigned long nr;
-	
+
 	if ((from&0x3fffff) || (to&0x3fffff))
 		iprintk("copy_page_tables called with wrong alignment\n");
 	from_dir = (unsigned long *)(pgdir_table_ptr + ((from>>22) & 0x3ff));

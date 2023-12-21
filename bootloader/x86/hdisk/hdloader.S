@@ -192,8 +192,7 @@ LABEL_START:
     /* show memory layout of installed. */
     call DispMemInfo
 
-    jmp .
-    ljmpl     $SelectorFlatC,$(OffsetOfKernel)
+    call main
 
 DispMemInfo:
     pushl %edx

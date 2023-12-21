@@ -1,20 +1,19 @@
 CC=gcc
 LD=ld
 AS=as
-#PWD=$(shell pwd)
 BOOTLDFILE=$(PWD)/bootloader/x86/boot_x86.ld
-LOADERLDFILE=$(PWD)/bootloader/x86/hdisk/hdloader_x86.ld
 OBJCOPY=objcopy
 HDIMAGE=$(PWD)/utils/hd.img
 ARCHINCLUDE=$(PWD)/arch/x86/asm/include
 BOOTLOADER_INCLUDE=${PWD}/bootloader/x86/include
 
-ASMKFLAGS	= -I include/ -I $(ARCHINCLUDE) -I $(BOOTLOADER_INCLUDE)
+ASMKFLAGS	= -I$(PWD)/include/ -I$(ARCHINCLUDE) -I$(BOOTLOADER_INCLUDE)
 LDFLAGS = -m elf_i386 -nolibc -nostdlib
-CFLAGS = -m32 -fno-builtin -fno-stack-protector
+CFLAGS = -m32 -fno-builtin -fno-stack-protector -I ${PWD}/arch/x86/include
 
+objs-hdisk=hboot.o hdloader.o main.o hd.o
 
-all: hboot.bin hdloader.bin
+all: $(objs-hdisk) hboot.bin
 
 hboot.o: hboot.S
 	$(CC) $(ASMKFLAGS) $(CFLAGS) -c $<
@@ -34,13 +33,14 @@ install: hboot.bin hdloader.bin
 hdloader.o: hdloader.S
 	$(CC) $(ASMKFLAGS) $(CFLAGS) -c $<
 
-hdloader.elf: hdloader.o
-	$(LD) $(LDFLAGS) -T$(LOADERLDFILE) $< -o $@
+main.o: main.c
+	$(CC) $(ASMKFLAGS) $(CFLAGS) -c $<
 
-hdloader.bin: hdloader.elf
-	$(OBJCOPY) -R .pdr -R .comment -R .note -S -O binary $^ $@
+hd.o: hd.c
+	$(CC) $(ASMKFLAGS) $(CFLAGS) -c $<
 
 clean:
 	rm -rf hboot.bin hboot.elf hboot.o hdloader.bin hdloader.o hdloader.elf
+	rm -rf hd.o main.o
 
 .PHONY: clean all

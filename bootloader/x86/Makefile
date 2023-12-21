@@ -1,18 +1,33 @@
 CC=gcc
 LD=ld
 AS=as
-PWD=$(shell pwd)
-BOOTLDFILE=$(PWD)/boot_x86.ld
-LOADERLDFILE=$(PWD)/loader_x86.ld
+BOOTLDFILE=$(PWD)/bootloader/x86/boot_x86.ld
+LOADERLDFILE=$(PWD)/bootloader/x86/loader_x86.ld
 OBJCOPY=objcopy
-FDIMAGE=$(PWD)/../../utils/gpos.img
-ARCHINCLUDE=$(PWD)/../../arch/x86/asm/include
+FDIMAGE=$(PWD)/utils/gpos.img
+ARCHINCLUDE=$(PWD)/arch/x86/asm/include
+
+HD_LOADERLDFILE=$(PWD)/bootloader/x86/hdisk/hdloader_x86.ld
+
 
 ASMKFLAGS	= -I include/ -I $(ARCHINCLUDE)
+LDFLAGS = -m elf_i386 -nolibc -nostdlib
+CFLAGS = -m32 -fno-builtin -fno-stack-protector -I ${PWD}/arch/x86/include
 
+bin-bootloader=boot.bin loader.bin
+hdisk-path=./hdisk
+objs-hdisk= $(hdisk-path)/hdloader.o $(hdisk-path)/hboot.o \
+			$(hdisk-path)/main.o $(hdisk-path)/hd.o
 
+objs-core=./core/iprintk.o
+objs-fs=./fs/buffer.o
 
-all:  boot.bin loader.bin
+all:
+	$(Q)make all -C ./fs
+	$(Q)make all -C ./core
+	$(Q)make all -C ./hdisk
+	$(Q)make $(hdisk-path)/hdloader.bin
+	$(Q)make $(bin-bootloader)
 
 #compile boot.S and write to boot sector of Floppy
 boot.o: boot.S include/load.inc include/fat12hdr.inc
@@ -44,5 +59,14 @@ install: boot.img loader.bin
 	sudo cp -rf loader.bin $(PWD)/floppy
 	sudo umount $(PWD)/floppy
 
+$(hdisk-path)/hdloader.elf: $(objs-hdisk) $(objs-core) $(objs-fs)
+	$(LD) $(LDFLAGS) -T$(HD_LOADERLDFILE) $^ -o $@
+
+$(hdisk-path)/hdloader.bin: $(hdisk-path)/hdloader.elf
+	$(OBJCOPY) -R .pdr -R .comment -R .note -S -O binary $^ $@
+
 clean:
-	rm -rf boot.o boot.elf boot.bin loader.o loader.elf
+	rm -rf boot.o boot.elf boot.bin loader.o loader.elf loader.bin
+	$(Q)make clean -C ./fs
+	$(Q)make clean -C ./core
+	$(Q)make clean -C $(hdisk-path)

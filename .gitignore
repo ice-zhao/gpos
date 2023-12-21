@@ -70,3 +70,5 @@ drivers/char/tty/keyboard.s
 backup/
 lab/
 **/**/*.asm
+.cache/
+compile_commands.json

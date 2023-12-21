@@ -9,19 +9,20 @@ include arch/$(ARCH)/asm/include/Makefile
 
 all: bootloader kernel
 
-
-hd_bootloader:
-	$(Q)make all -C ./bootloader/x86/hdisk
-
-hd_bootloader_clean:
-	$(Q)make clean -C ./bootloader/x86/hdisk
-
-hd_bootloader_install:
-	$(Q)make install -C ./bootloader/x86/hdisk
-
 bootloader:
 	$(Q)make all -C ./bootloader/x86
 
+#install hard disk bootloader
+install_hd_bootloader:
+	$(Q)make bootloader
+	$(Q)make install -C ./bootloader/x86/hdisk
+
+#only clean hard disk bootloader
+clean_hd_bootloader:
+	$(Q)make clean -C ./bootloader/x86/hdisk
+
+clean_bootloader:
+	$(Q)make clean -C ./bootloader/x86
 
 kernel:
 	make all -C ./lib
@@ -36,12 +37,12 @@ install: install_bootloader install_kernel
 install_kernel: kernel
 	make install -C ./arch/x86
 
+#install floppy bootloader
 install_bootloader: bootloader
 	make install -C ./bootloader/x86
 
 
 clean:
-	$(Q)make clean -C ./bootloader/x86
 	make clean -C ./mm
 	make clean -C ./kernel
 	make clean -C ./arch/x86

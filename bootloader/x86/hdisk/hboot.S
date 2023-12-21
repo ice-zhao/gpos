@@ -81,7 +81,7 @@ read_sector_error:
 disk_address_packet_struct:
 	    .byte  0x10     /* disk address packet structure size */
 	    .byte  0        /* reserved, must be 0 */
-        .byte  16       /* the number of sectors to be loaded */
+        .byte  16       /* the number of sectors to be loaded */ /* 16*512B=8KB */
         .byte  0        /* reserved, must be 0 */
 	    .2byte 0x500    /* buffer offset*/
 	    .2byte 0        /* buffer segment */
