@@ -23,4 +23,26 @@ __asm__("cld\n\t"
 return __res;
 }
 
+static inline int strncmp(char* src, char* dest, int len) {
+   while (*src != '\0' && *dest != '\0' && *src == *dest && len > 0) {
+	   len--;
+	   src++;
+	   dest++;
+   }
+
+   if (len > 0) {
+		if (*src == '\0' && *dest != '\0')
+			return -1;
+		if (*src != '\0' && *dest == '\0')
+			return 1;
+		if (*src > *dest)
+			return 1;
+		if (*src < *dest)
+			return -1;
+   }
+
+   return 0;
+}
+
+
 #endif

@@ -20,7 +20,7 @@ objs-hdisk= $(hdisk-path)/hdloader.o $(hdisk-path)/hboot.o \
 			$(hdisk-path)/main.o $(hdisk-path)/hd.o
 
 objs-core=./core/iprintk.o
-objs-fs=./fs/buffer.o
+objs-fs=./fs/buffer.o ./fs/super.o ./fs/inode.o ./fs/namei.o
 
 all:
 	$(Q)make all -C ./fs

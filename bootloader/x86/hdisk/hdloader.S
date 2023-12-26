@@ -3,6 +3,7 @@
 	.section .text
     .include "load.inc"
     .include "pm.inc"
+    .include "hdregs.inc"
 
    	jmp _start
     .align 8
@@ -190,7 +191,7 @@ LABEL_START:
     mov %ax, %gs:(%edi)
 
     /* show memory layout of installed. */
-    call DispMemInfo
+    /* call DispMemInfo */
 
     call main
 
@@ -304,6 +305,8 @@ DispStr:
     ret
 
 #show an integer number
+	.globl DispInt
+	.type DispInt, @function
 DispInt:
     movl 4(%esp), %eax
     shr $24, %eax
@@ -364,6 +367,67 @@ DispAL:
     popl %ecx
 
     ret     #the end of DispAL
+
+	/*int read_blocks(unsigned int block_no, unsigned int counts, char* buffer)*/
+.globl read_blocks
+.type read_blocks, @function
+read_blocks:
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %edx
+	pushl %ecx
+	pushl %edi
+
+	movl $HD_NSECTOR, %edx
+	movl 12(%ebp), %eax	/* counts */
+	shl $1, %eax	/* 2 sectors/block */
+	outb %al, %dx	/* output total sectors to read */
+
+	movl 8(%ebp), %eax	/* block index to read */
+	shll $1, %eax	/* convert to sectors */
+	addl $base_sector, %eax /* add base sector to got start sector to read */
+	movl $HD_SECTOR, %edx
+	outb %al, %dx
+	movl $HD_LCYL, %edx
+	shrl $8, %eax
+	outb %al, %dx
+	movl $HD_HCYL, %edx
+	shrl $8, %eax
+	outb %al, %dx
+	movl $HD_CURRENT, %edx
+	shrl $8, %eax
+	andl $0x0f, %eax
+	orl  $0xe0, %eax
+	outb %al, %dx	/* LBA mode, primary disk and high LBA number */
+
+	movl $HD_STATUS, %edx
+	movb $HD_READ_CMD, %al
+	outb %al, %dx	/* send read command */
+
+	movl $HD_STATUS, %edx
+1:
+	inb %dx, %al
+	and $0x88, %al
+	cmp $0x08, %al
+	jnz 1b
+
+	movl $256, %ecx
+	movl $HD_DATA, %edx
+	movl 16(%ebp), %edi
+2:
+	in %dx, %ax
+	mov %ax, (%edi)
+	add $2, %di
+	dec %cx
+	jnz 2b
+
+
+	popl %edi
+	popl %ecx
+	popl %edx
+	popl %ebp
+	ret
+
 
     .section .data
 _szMemChkTitle:		.asciz	"BaseAddrL BaseAddrH LengthLow LengthHigh  Type\n"

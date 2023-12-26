@@ -7,6 +7,9 @@ OBJCOPY=objcopy
 FDIMAGE=$(BASE)/utils/gpos.img
 ARCHINCLUDE=$(PWD)/asm/include
 floppy=$(BASE)/bootloader/x86/floppy
+hardisk=$(BASE)/utils/hd.img
+loop1=/dev/loop1
+disk-folder=$(BASE)/utils/disk
 
 include asm/include/Makefile
 
@@ -66,6 +69,15 @@ install: kernel.bin
 	sudo mount $(FDIMAGE) $(floppy)
 	sudo cp -rf $< $(floppy)
 	sudo umount $(floppy)
+
+#1048576B is reserved for bootloader on disk
+#use the `parted` comand to check this value.
+hd_install: kernel.bin
+	sudo losetup $(loop1) $(hardisk) -o 1048576
+	sudo mount $(loop1) $(disk-folder)
+	sudo cp -rf $< $(disk-folder)/$<
+	sudo umount $(disk-folder)
+	sudo losetup -d $(loop1)
 
 clean:
 	$(Q)rm -rf asm/kernel.elf kernel.bin asm/head.o $(objs)

@@ -6,6 +6,7 @@ BASE := $(PWD)
 export BASE DEST ARCH CC
 
 include arch/$(ARCH)/asm/include/Makefile
+include utils/make/rules.mk
 
 all: bootloader kernel
 
@@ -34,8 +35,13 @@ kernel:
 
 install: install_bootloader install_kernel
 
+#install kernel to floppy
 install_kernel: kernel
 	make install -C ./arch/x86
+
+#install kernel to hard disk
+hd_install_kernel: kernel
+	make hd_install -C ./arch/x86
 
 #install floppy bootloader
 install_bootloader: bootloader
