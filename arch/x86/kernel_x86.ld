@@ -1,11 +1,11 @@
 SECTIONS
 {
-    . = 0x0;
     _start_kernel = .;
 
-    .text :
+	.text : ALIGN(8)
     {
         _ftext = .;
+		_jiffies = ALIGN(4);
     }
 
     .data : ALIGN(8)
@@ -30,5 +30,5 @@ SECTIONS
 
     _end_kernel = ALIGN(4k);
     _pg_dir = _end_kernel;
-    /*dynamic allocation page structure at the end of kernel*/
+    /*dynamic allocation page structure for MMU paging at the end of kernel*/
 }

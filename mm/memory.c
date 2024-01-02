@@ -13,13 +13,13 @@
     __asm__("movl %%eax,%%cr3"::"a" (&_pg_dir))
 
 
-static long memory_end = 0;
+static unsigned long memory_end = 0;
 static const long buffer_memory_end = 4*1024*1024;    //4M
-static long main_memory_start = 0;
+static unsigned long main_memory_start = 0;
 static long HIGH_MEMORY = 0;
 static long PAGING_MEMORY = 0;
 static long PAGING_PAGES = 0;
-static unsigned long mem_map [ MM_BITMAPS ] = {0,};
+unsigned long mem_map [ MM_BITMAPS ] = {0,};
 static const unsigned long mm_pages_start = buffer_memory_end;
 static unsigned long mm_pages_size = 4*1024*1024;   //4M
 struct page *mm_pages =(struct page *)mm_pages_start;
@@ -63,7 +63,7 @@ int copy_page_tables(unsigned long from,unsigned long to,long size)
 	unsigned long * from_dir, * to_dir;
 	unsigned long nr;
 
-	if ((from&0x3fffff) || (to&0x3fffff))
+	if ((from&0x3fffff) || (to&0x3fffff))	/* should be 4M boundary */
 		iprintk("copy_page_tables called with wrong alignment\n");
 	from_dir = (unsigned long *)(pgdir_table_ptr + ((from>>22) & 0x3ff));
 	to_dir = (unsigned long *)(pgdir_table_ptr + ((to>>22) & 0x3ff));
@@ -82,13 +82,14 @@ int copy_page_tables(unsigned long from,unsigned long to,long size)
 		nr = 1024;
 		for ( ; nr-- > 0 ; from_page_table++,to_page_table++) {
 			this_page = *from_page_table;
-			if (!(1 & this_page))
+			if (!(1 & this_page))	/* page not present */
 				continue;
 			this_page &= ~2;  //for COW
 			*to_page_table = this_page;
+
 			if (this_page >= LOW_MEM) {
 				*from_page_table = this_page;
-                mms_page(this_page)->_refcount++;
+				++(mms_page(this_page)->_refcount);
 			}
 		}
 	}
@@ -98,8 +99,8 @@ int copy_page_tables(unsigned long from,unsigned long to,long size)
 
 
 void mm_init(void) {
-    memory_end = mach_data.total_mem_size<<10;
-    main_memory_start = mm_pages_start + mm_pages_size;
+    memory_end = mach_data.total_mem_size<<10;	/* machine data uses K as unit, change it to Byte unit */
+    main_memory_start = (long)end_of_kernel + (__get_paging_frames() * 4096);
 
     HIGH_MEMORY = memory_end;
     PAGING_MEMORY = memory_end - LOW_MEM;
@@ -110,8 +111,10 @@ void mm_init(void) {
         mem_map[i]=0xFFFFFFFF;
     }
 
+	memset(start_buffer, 0, buffer_memory_end);
+	memset(mm_pages, 0, mm_pages_size);
     for(i=0; i<MM_PAGES; i++) {
-        (mm_pages+i)->_refcount++;
+        ++((mm_pages+i)->_refcount);
     }
 
     unsigned long addr = 0;
@@ -150,8 +153,8 @@ void clear_mem_map(unsigned long addr) {
  */
 unsigned long get_free_page(void)
 {
-    unsigned long addr = 0;
-    register unsigned long pos asm("eax");
+	unsigned long addr = 0;
+    unsigned long pos; /* asm("eax") */;
 
     __asm__ ("std; repe; scasl \n\t"
              "je 1f \n\t"
@@ -187,13 +190,16 @@ void un_wp_page(unsigned long * page_table_entry)
 		invalidate();
         return;
 	}
+
 	if (!(new_page=get_free_page())) {
         iprintk("out of memory \n");
 		/* oom(); */
     }
+
 	if (old_page >= LOW_MEM) {
-		mms_page(old_page)->_refcount--;
+		--(mms_page(old_page)->_refcount);
     }
+
 	*page_table_entry = new_page | 7;
 	invalidate();
 	copy_page(old_page,new_page);

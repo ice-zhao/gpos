@@ -191,9 +191,12 @@ LABEL_START:
     mov %ax, %gs:(%edi)
 
     /* show memory layout of installed. */
-    /* call DispMemInfo */
+    call DispMemInfo
 
     call main
+
+	/* jump to kernel */
+	ljmpl     $SelectorFlatC, $KERNEL_START_ADDRESS
 
 DispMemInfo:
     pushl %edx
@@ -376,7 +379,7 @@ read_blocks:
 	movl %esp, %ebp
 	pushl %edx
 	pushl %ecx
-	pushl %edi
+	pushl %ebx
 
 	movl $HD_NSECTOR, %edx
 	movl 12(%ebp), %eax	/* counts */
@@ -411,18 +414,21 @@ read_blocks:
 	cmp $0x08, %al
 	jnz 1b
 
-	movl $256, %ecx
+	movl $256, %eax
+	movl 12(%ebp), %ecx	/* counts */
+	shl  %cl, %eax
+	movl %eax, %ecx
 	movl $HD_DATA, %edx
-	movl 16(%ebp), %edi
+	movl 16(%ebp), %ebx
 2:
 	in %dx, %ax
-	mov %ax, (%edi)
-	add $2, %di
-	dec %cx
+	mov %ax, (%ebx)
+	addl $2, %ebx
+	decl %ecx
 	jnz 2b
 
 
-	popl %edi
+	popl %ebx
 	popl %ecx
 	popl %edx
 	popl %ebp

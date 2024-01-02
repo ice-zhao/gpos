@@ -15,8 +15,11 @@ extern struct desc_struct *gdt;
 extern struct task_struct *task[NR_TASKS];
 extern struct task_struct *last_task_used_math;
 extern struct task_struct *current;
-extern long volatile jiffies;
-extern long startup_time;
+extern unsigned long volatile jiffies;
+extern unsigned long startup_time;
+
+extern char* _jiffies;
+#define jiffies (*(long *)&_jiffies)
 
 
 void schedule_init(void);

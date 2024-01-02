@@ -2,6 +2,7 @@
 
 #change to your bochs path that contains executable files.
 BOCHS_BASE="/home/ice/gm/tools/bochs-2.6.11/image"
+# BOCHS_BASE="/home/ice/gm/tools/installed/bochs"
 BOCHS="${BOCHS_BASE}/bin/bochs"
 GPOS_BASE="${PWD}"
 

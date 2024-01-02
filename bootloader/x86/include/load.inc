@@ -13,3 +13,5 @@
 #machine data
 .equ    memory_size_offset,    0x200
 .equ    memory_size_addr,   (LOADER_PHY_ADDR + memory_size_offset)
+
+.equ	KERNEL_START_ADDRESS,	(0x800000)

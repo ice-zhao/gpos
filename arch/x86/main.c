@@ -1,3 +1,4 @@
+#include "string.h"
 #define __LIBRARY__
 
 #include <print.h>
@@ -16,7 +17,7 @@
 #include <kernel/tty.h>
 #include <stdarg.h>
 #include <unistd.h>
-
+#include <kernel/kernel.h>
 /*
  * we need this inline - forking from kernel space will result
  * in NO COPY ON WRITE (!!!), until an execve is executed. This
@@ -45,6 +46,7 @@ void init(void);
 static char printbuf[1024];
 extern int vsprintf();
 
+
 /*
  * This is set up by the boot-loader.
  */
@@ -53,45 +55,46 @@ extern int vsprintf();
 #define ORIG_ROOT_DEV (*(unsigned short *)0x901FC)
 
 void process1(void) {
-    long start1=jiffies;
+    unsigned long start1=jiffies;
+	unsigned long end1=jiffies;
 
     for(;;) {
-        long end=jiffies;
-        if(end - start1 > 600) {
+        end1=jiffies;
+        if(end1 - start1 > 600) {
             /* iprintk("process 1 is running now! \n"); */
-            start1 = end;
+            printf("%s\n", "process 1 is running now!");
+            start1 = end1;
         }
     }
 }
 
 void process0(void) {
-    long start0=jiffies;
+    unsigned long start0=jiffies;
 
     if(!fork()) {       //create second process 1
         init();
-        process1();
+		process1();
     }
 
     for(;;) {
-        long end=jiffies;
+        unsigned long end=jiffies;
         if(end - start0 > 300) {
+			/* printf("%s\n", "process 0 is running now! from printf."); */
             /* iprintk("process 0 is running now! \n"); */
             start0 = end;
         }
     }
 }
 
-
 void main(void)
 {
-    ROOT_DEV=0x301;     /*major:3, minor:1 hard disk, first partition*/
-    init_machine_data();
     init_bss_section();
-    drive_info = DRIVE_INFO;
+	ROOT_DEV=0x301;     /*major:3, minor:1 hard disk, first partition*/
     init_machine_data();
+    drive_info = DRIVE_INFO;
+	mm_init();
     trap_init();
     init_heap();
-    mm_init();
     schedule_init();
     blk_dev_init();
     hd_init();
@@ -100,12 +103,11 @@ void main(void)
 
     unsigned long stack_top = get_free_page() + 4096;
     move_to_user_mode(stack_top);
-
     process0();     //here is process 0
 }
 
 
-static int printf(const char *fmt, ...)
+int printf(const char *fmt, ...)
 {
 	va_list args;
 	int i;

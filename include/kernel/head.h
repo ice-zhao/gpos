@@ -3,7 +3,7 @@
 
 extern char* _pg_dir;
 
-#define pgdir_table_ptr    ((unsigned long*)&_pg_dir)
+#define pgdir_table_ptr   ((unsigned long*)&_pg_dir)
 
 typedef struct desc_struct {
 	unsigned long a,b;

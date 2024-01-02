@@ -37,7 +37,7 @@ timer_interrupt:
 	mov %ax,%es
 	movl $0x17,%eax
 	mov %ax,%fs
-	incl jiffies
+	incl (_jiffies)
 	movb $0x20,%al		# EOI to interrupt controller #1
 	outb %al,$0x20
 	movl CS(%esp),%eax
@@ -91,8 +91,8 @@ ret_from_sys_call:
     .align 2
 sys_fork:
 	call find_empty_process
-	testl %eax,%eax
-	js 1f
+	testl %eax,%eax	#function retual negative value.
+	js 1f	#has error, jump out, SF=1 (negative)
 	push %gs
 	pushl %esi
 	pushl %edi
@@ -114,8 +114,8 @@ hd_interrupt:
 	mov %ax,%es
 	movl $0x17,%eax
 	mov %ax,%fs
-	movb $0x20,%al
-	outb %al,$0xA0		# EOI to interrupt controller #1
+	movb $0x20,%al	#EOI code
+	outb %al,$0xA0		# EOI to interrupt controller #1, slave port
 	jmp 1f			# give port chance to breathe
 	1:	jmp 1f
 	1:	xorl %edx,%edx
@@ -123,7 +123,7 @@ hd_interrupt:
 	testl %edx,%edx
 	jne 1f
 	movl $unexpected_hd_interrupt,%edx
-	1:	outb %al,$0x20
+	1:	outb %al,$0x20	#EOI, master port
 	call *%edx		# "interesting" way of handling intr.
 	pop %fs
 	pop %es

@@ -44,5 +44,5 @@ static inline int strncmp(char* src, char* dest, int len) {
    return 0;
 }
 
-
+extern void DispInt(int val);
 #endif

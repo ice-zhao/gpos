@@ -1,3 +1,4 @@
+#include "kernel/kernel.h"
 #include <print.h>
 #include <errno.h>
 #include <fs/fs.h>
@@ -18,8 +19,9 @@ int sys_write(unsigned int fd,char * buf,int count)
 	inode=file->f_inode;
 	/* if (inode->i_pipe) */
 	/* 	return (file->f_mode&2)?write_pipe(inode,buf,count):-EIO; */
-	if (S_ISCHR(inode->i_mode))
+	if (S_ISCHR(inode->i_mode)) {
 		return rw_char(WRITE,inode->i_zone[0],buf,count,&file->f_pos);
+	}
 	/* if (S_ISBLK(inode->i_mode)) */
 	/* 	return block_write(inode->i_zone[0],&file->f_pos,buf,count); */
 	/* if (S_ISREG(inode->i_mode)) */

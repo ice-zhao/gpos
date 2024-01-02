@@ -9,6 +9,7 @@
     .code32
     .section .text
     .globl iprintk
+	.type iprintk, @function
 iprintk:
     pushl %ebp
     movl %esp, %ebp

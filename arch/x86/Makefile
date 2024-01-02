@@ -28,7 +28,7 @@ CFLAGS += -I $(BASE)/arch/$(ARCH)/ -I $(BASE)/include/
 objs-kernel := $(output-kernel)/schedule.o $(output-kernel)/fork.o $(output-kernel)/trap.o $(output-kernel)/panic.o \
 			$(output-kernel)/vsprintf.o $(output-kernel)/printk.o
 objs-mm := $(output-mm)/heap.o $(output-mm)/memory.o $(output-mm)/page.o
-objs := asm/iprintk.o bss.o main.o asm/system_call.o machine.o
+objs := asm/iprintk.o bss.o asm/system_call.o machine.o main.o
 objs-drivers := $(output-hd-drivers)/hd.o $(output-hd-drivers)/ll_rw_blk.o
 
 objs-fs := $(output-fs)/buffer.o $(output-fs)/super.o $(output-fs)/file_table.o $(output-fs)/inode.o $(output-fs)/bitmap.o \
@@ -57,8 +57,8 @@ machine.o: machine.c
 	$(CC) $(CFLAGS) -o $@ -c $^
 
 asm/kernel.elf: asm/head.o $(objs) $(objs-all)
-	$(LD) -T$(KERNELLD) $(LDFLAGS) $^ -l$(chardrivers) -l$(libname) -o $@
-	$(Q)nm $@ | grep -v '\(compiled\)\|\(\.o$$\)\|\( [aU] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)'| sort > kernel.map
+	$(LD) -Ttext=$(KERNEL_START_ADDRESS) -T$(KERNELLD) $(LDFLAGS) $^ -l$(chardrivers) -l$(libname) -o $@
+	@$(Q)nm $@ | grep -v '\(compiled\)\|\(\.o$$\)\|\( [aU] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)'| sort > kernel.map
 
 
 kernel.bin: asm/kernel.elf
@@ -76,6 +76,7 @@ hd_install: kernel.bin
 	sudo losetup $(loop1) $(hardisk) -o 1048576
 	sudo mount $(loop1) $(disk-folder)
 	sudo cp -rf $< $(disk-folder)/$<
+	@sleep 1
 	sudo umount $(disk-folder)
 	sudo losetup -d $(loop1)
 

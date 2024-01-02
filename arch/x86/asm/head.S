@@ -26,11 +26,14 @@ GdtPtr:
     .equ	SelectorFlatRW, (LABEL_DESC_FLAT_RW	- LABEL_GDT)
     .equ	SelectorVideo, (LABEL_DESC_VIDEO	- LABEL_GDT + SA_RPL3)
 
+    .align 8
+idt:
+	.fill 256,8,0		# idt is uninitialized
+
 idt_descr:
    	.2byte 256*8-1                           # idt contains 256 entries, every entry is 8 bytes, limit
 	.4byte (idt + KERNEL_PHY_ADDR)           # idt base phy address
 
-idt:	.fill 256,8,0		# idt is uninitialized
 
 _start:
     mov $SelectorFlatRW, %ax
@@ -42,23 +45,21 @@ _start:
     mov $(SelectorVideo), %ax
     mov %ax, %gs /* Video segment selector(dest) */
 
-    lgdtl GdtPtr
+	lgdtl GdtPtr
 
 	call setup_idt
     call setup_paging
-
-#    int 0x80
 
 #    pushl $int_msg
 #    call iprintk
 #    add $4, %esp
 
-    movl $((80 * 11 + 0) * 2), %edi
+	movl $((80 * 11 + 0) * 2), %edi
     movb $0xC, %ah /* 0000: Black Back 1100: Red Front */
-    movb $'K', %al
+    movb $'B', %al
     mov %ax, %gs:(%edi)
 
-    pushl $main
+	pushl $main
     ret
     hlt     #never come here
 
@@ -182,6 +183,74 @@ rp_sidt:
 	jne rp_sidt
     lidtl idt_descr
     ret
+
+#show an integer number
+	.globl DispInt
+	.type DispInt, @function
+DispInt:
+    movl 4(%esp), %eax
+    shr $24, %eax
+    call DispAL
+
+    movl 4(%esp), %eax
+    shr $16, %eax
+    call DispAL
+
+    movl 4(%esp), %eax
+    shr $8, %eax
+    call DispAL
+
+    movl 4(%esp), %eax
+    call DispAL
+
+    mov $0x07, %ah  #0000b: black background, 0111b gray char
+    mov $'h', %al
+    push %edi
+    movl (cursor_pos), %edi
+    movw %ax, %gs:(%edi)
+    add $4, %edi
+    movl %edi, (cursor_pos)
+    pop %edi
+    ret
+
+#show %al's number
+DispAL:
+    pushl %ecx
+    pushl %edx
+    pushl %edi
+
+    movl (cursor_pos), %edi
+    mov $0x0F, %ah  #0000: black background, 1111b: white word
+    mov %al, %dl
+    shr $4, %al
+    mov $2, %ecx
+.begin:
+    and $0x0F, %al
+    cmp $9, %al
+    ja .1st
+    add $'0', %al
+    jmp .2nd
+.1st:
+    sub $0xA, %al
+    add $'A', %al
+.2nd:
+    movw %ax, %gs:(%edi)
+    add $2, %edi
+
+    mov %dl, %al
+    loop .begin
+
+    movl %edi, (cursor_pos)
+
+    popl %edi
+    popl %edx
+    popl %ecx
+
+    ret     #the end of DispAL
+
+_cursor_pos:
+    .4byte (80 * 0 + 0) * 2   # at 0 line, 0 column
+    .equ   cursor_pos, (_cursor_pos)
 
     .section .kernel_end
 kernel_end_flag:

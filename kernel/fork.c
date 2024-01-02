@@ -1,3 +1,4 @@
+#include "string.h"
 #include <kernel/schedule.h>
 #include <errno.h>
 #include <mm/heap.h>
@@ -26,8 +27,7 @@ int copy_mem(int nr,struct task_struct * p)
 {
 	unsigned long old_data_base,new_data_base,data_limit;
 	unsigned long old_code_base,new_code_base,code_limit;
-
-	code_limit=get_limit(0x0f);
+	code_limit=get_limit(0x0f);	/* ldt selector */
 	data_limit=get_limit(0x17);
 	old_code_base = get_base(current->ldt[1]);
 	old_data_base = get_base(current->ldt[2]);
@@ -93,6 +93,7 @@ int copy_process(int nr,long ebp,long edi,long esi,long gs,long none,
 	p->tss.gs = gs & 0xffff;
 	p->tss.ldt = _LDT(nr);
 	p->tss.trace_bitmap = 0x80000000;
+
 	/* if (last_task_used_math == current) */
 	/* 	__asm__("clts ; fnsave %0"::"m" (p->tss.i387)); */
 	if (copy_mem(nr,p)) {
@@ -100,6 +101,7 @@ int copy_process(int nr,long ebp,long edi,long esi,long gs,long none,
 		/* free_page((long) p); */
 		return -EAGAIN;
 	}
+
 	/* for (i=0; i<NR_OPEN;i++) */
 	/* 	if ((f=p->filp[i])) */
 	/* 		f->f_count++; */

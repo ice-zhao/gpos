@@ -4,7 +4,7 @@ void iprintk(const char *str);
 int printk(const char *fmt, ...);
 
 
-
+void clear_screen();
 
 
 

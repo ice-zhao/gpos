@@ -23,8 +23,8 @@ static union task_union init_task = {INIT_TASK,};
 
 struct task_struct *task[NR_TASKS] = {&(init_task.task), };
 
-long volatile jiffies=0;
-long startup_time=0;
+/* unsigned long volatile jiffies=0; */
+unsigned long startup_time=0;
 struct task_struct *current = &(init_task.task);
 struct task_struct *last_task_used_math = NULL;
 

@@ -1,2 +1,7 @@
+#8M
+KERNEL_START_ADDRESS=0x800000
+
+export KERNEL_START_ADDRESS
+
 %.o: %.c
 	$(CC) $(CFLAGS) -c $<
