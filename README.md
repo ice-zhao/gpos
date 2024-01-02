@@ -2,19 +2,44 @@
 写个操作系统
 
 build up a new Operating System from scratch.
- 1. 显示安装的内存
+
+0.bootloader
+    
+    bootloader由两部分组成，分别如下：
+    
+    bootloader is consist of two parts, they are as follwoing:
+    
+    (1) 从软盘引导 (已弃用)
+    
+    (1) booting from floppy (Depracated)
+    
+    (2) 从硬盘引导
+    
+    (2) booting from hard disk.
+    
+  0.1 内存分存
+ 
+  0.1 memory layout
+ 
+ ![图片](https://github.com/ice-zhao/gpos/assets/39359146/6e4e2b6d-60df-4b84-afc4-412fe5d8839f)
+ 
+1.内核
+
+ 1.Kernel
+ 
+(1) 显示安装的内存
    
     show installed memory
 
 ![图片](https://user-images.githubusercontent.com/39359146/134795177-f30e7ff5-f600-42c5-819e-9aa3645698de.png)
 
-2. 开始运行第一个进程0
+(2) 开始运行第一个进程0
 
    start running first process 0
   
 ![图片](https://user-images.githubusercontent.com/39359146/138578370-109e8a61-a714-4c2b-bab8-c356c8bc7cfd.png)
 
-3. 系统调用
+(3) 系统调用
 
    3.1 系统调用fork()创建进程１，并加入进程调度;)
 
@@ -34,7 +59,7 @@ build up a new Operating System from scratch.
      
      Add dup() system call.
      
-4. 内存管理
+(4) 内存管理
 
    4.1 添加内存管理
 
@@ -44,7 +69,7 @@ build up a new Operating System from scratch.
    
    Copy On Write works now.
    
-5. 文件系统
+(5) 文件系统
    
    File system
    
@@ -56,7 +81,7 @@ build up a new Operating System from scratch.
    
    mount root file system from hard disk.
    
-6. 驱动程序
+(6) 驱动程序
 
    Drivers
 
