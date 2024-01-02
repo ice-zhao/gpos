@@ -7,7 +7,7 @@ build up a new Operating System from scratch.
     
     bootloader由两部分组成，分别如下：
     
-    bootloader is consist of two parts, they are as follwoing:
+    bootloader is consist of two parts, they are as following:
     
     (1) 从软盘引导 (已弃用)
     
