@@ -78,13 +78,17 @@ void process1(void) {
     for(;;) {
         end1=jiffies;
         if(end1 - start1 > 600) {
-            /* iprintk("process 1 is running now! \n"); */
             printf("%s\n", "process 1 is running now!");
             start1 = end1;
         }
     }
 }
 
+/*
+ * task[0] should not be sleep. user space 'printf' results in sleep.
+   task uses 'ldt' to describe memory, when use 'iprintk', the 'gs'(video segment) should be set correctly,
+   for now, the 'ldt' of task_struct doesn't contains video segment.
+ */
 void process0(void) {
     unsigned long start0=jiffies;
 
@@ -96,8 +100,6 @@ void process0(void) {
     for(;;) {
         unsigned long end=jiffies;
         if(end - start0 > 300) {
-			/* printf("%s\n", "process 0 is running now! from printf."); */
-            /* iprintk("process 0 is running now! \n"); */
             start0 = end;
         }
     }
