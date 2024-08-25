@@ -96,3 +96,18 @@ build up a new Operating System from scratch.
 
    
    
+2 Build and Testing
+  The source code has built and tested on Ubuntu24.04.
+  gcc >= 14.0.1
+  ld >= 2.42
+  make >= 4.3
+  bochs == 2.6.9
+  bash >= 5.2.21
+  
+  2.1 Build commands
+      git clone https://github.com/ice-zhao/gpos.git
+      cd gpos
+      make
+  2.2 Run GPOS
+      under gpos folder, run script:
+      ./utils/runbochs.sh
