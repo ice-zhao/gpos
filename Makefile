@@ -55,5 +55,6 @@ clean:
 	make clean -C ./lib
 	make clean -C ./drivers
 	make clean -C ./fs
+	make clean -C ./bootloader/x86
 
 .PHONY: bootloader kernel install clean install_kernel install_bootloader

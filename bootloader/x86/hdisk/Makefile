@@ -8,7 +8,6 @@ ARCHINCLUDE=$(PWD)/arch/x86/asm/include
 BOOTLOADER_INCLUDE=${PWD}/bootloader/x86/include
 
 ASMKFLAGS	= -I$(PWD)/include/ -I$(ARCHINCLUDE) -I$(BOOTLOADER_INCLUDE)
-LDFLAGS = -m elf_i386 -nolibc -nostdlib
 CFLAGS = -m32 -fno-builtin -fno-stack-protector -I ${PWD}/arch/x86/include
 
 objs-hdisk=hboot.o hdloader.o main.o hd.o

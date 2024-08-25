@@ -5,13 +5,14 @@ BOOTLDFILE=$(PWD)/bootloader/x86/boot_x86.ld
 LOADERLDFILE=$(PWD)/bootloader/x86/loader_x86.ld
 OBJCOPY=objcopy
 FDIMAGE=$(PWD)/utils/gpos.img
+floppy=$(BASE)/bootloader/x86/floppy
 ARCHINCLUDE=$(PWD)/arch/x86/asm/include
 
 HD_LOADERLDFILE=$(PWD)/bootloader/x86/hdisk/hdloader_x86.ld
 
+include include/Makefile
 
 ASMKFLAGS	= -I include/ -I $(ARCHINCLUDE)
-LDFLAGS = -m elf_i386 -nolibc -nostdlib
 CFLAGS = -m32 -fno-builtin -fno-stack-protector -I ${PWD}/arch/x86/include
 
 bin-bootloader=boot.bin loader.bin
@@ -55,9 +56,9 @@ loader.bin: loader.elf
 	$(OBJCOPY) -R .pdr -R .comment -R .note -S -O binary loader.elf loader.bin
 
 install: boot.img loader.bin
-	sudo mount $(FDIMAGE) $(PWD)/floppy
-	sudo cp -rf loader.bin $(PWD)/floppy
-	sudo umount $(PWD)/floppy
+	sudo mount $(FDIMAGE) $(floppy)
+	sudo cp -rf loader.bin $(floppy)
+	sudo umount $(floppy)
 
 $(hdisk-path)/hdloader.elf: $(objs-hdisk) $(objs-core) $(objs-fs)
 	$(LD) $(LDFLAGS) -T$(HD_LOADERLDFILE) $^ -o $@
