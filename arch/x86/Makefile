@@ -8,7 +8,7 @@ FDIMAGE=$(BASE)/utils/gpos.img
 ARCHINCLUDE=$(PWD)/asm/include
 floppy=$(BASE)/bootloader/x86/floppy
 hardisk=$(BASE)/utils/hd.img
-loop1=/dev/loop1
+loop1=$(shell losetup -f)	#find first can be used device
 disk-folder=$(BASE)/utils/disk
 
 include asm/include/Makefile

@@ -54,9 +54,26 @@ extern int vsprintf();
 #define DRIVE_INFO (*(struct drive_info *)0x90080)
 #define ORIG_ROOT_DEV (*(unsigned short *)0x901FC)
 
+void process2(void) {
+    unsigned long start1=jiffies;
+	unsigned long end1=jiffies;
+
+    for(;;) {
+        end1=jiffies;
+        if(end1 - start1 > 600) {
+            printf("%s\n", "process 2 is running now!");
+            start1 = end1;
+        }
+    }
+}
+
 void process1(void) {
     unsigned long start1=jiffies;
 	unsigned long end1=jiffies;
+
+	if(!fork()) {       //create second process 2
+		process2();
+    }
 
     for(;;) {
         end1=jiffies;
