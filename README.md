@@ -123,6 +123,6 @@ build up a new Operating System from scratch.
   
       under gpos folder, run script:
       
-      ./utils/runbochs.sh
+      ./utils/rungpos.sh
       
       
