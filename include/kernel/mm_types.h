@@ -7,7 +7,7 @@
 
 struct page {
     unsigned long flags;
-    long _refcount;
+    long _refcount;	/* how many objects refer to this page. */
 };
 
 #endif

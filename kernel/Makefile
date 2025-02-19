@@ -2,7 +2,7 @@
 include $(BASE)/arch/$(ARCH)/asm/include/Makefile
 
 output := $(BASE)/$(DEST)
-objs := schedule.o fork.o trap.o panic.o vsprintf.o printk.o
+objs := schedule.o fork.o trap.o panic.o vsprintf.o printk.o kernel.o
 CFLAGS += -I $(BASE)/arch/$(ARCH)/
 
 

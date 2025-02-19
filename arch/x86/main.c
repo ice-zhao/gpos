@@ -43,9 +43,6 @@ extern void blk_dev_init(void);
 struct drive_info { char dummy[32]; } drive_info;
 void init(void);
 
-static char printbuf[1024];
-extern int vsprintf();
-
 
 /*
  * This is set up by the boot-loader.
@@ -125,20 +122,8 @@ void main(void)
     process0();     //here is process 0
 }
 
-
-int printf(const char *fmt, ...)
-{
-	va_list args;
-	int i;
-
-	va_start(args, fmt);
-	write(1,printbuf,i=vsprintf(printbuf, fmt, args));
-	va_end(args);
-	return i;
-}
-
 void init(void) {
-    setup(&drive_info);
+    setup(&drive_info);	//mount root file system from hard disk.
 	(void) open("/dev/tty0",O_RDWR,0);
     (void) dup(0);
     (void) dup(0);

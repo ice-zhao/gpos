@@ -217,3 +217,37 @@ struct buffer_head * bread(int dev,int block)
 	brelse(bh);
 	return NULL;
 }
+
+#define COPYBLK(from,to)								\
+	__asm__("cld\n\t"									\
+			"rep\n\t"									\
+			"movsl\n\t"									\
+			::"c" (BLOCK_SIZE/4),"S" (from),"D" (to)	\
+		)
+
+/*
+ * bread_page reads four buffers into memory at the desired address. It's
+ * a function of its own, as there is some speed to be got by reading them
+ * all at the same time, not waiting for one to be read, and then another
+ * etc.
+ */
+void bread_page(unsigned long address,int dev,int b[4])
+{
+	struct buffer_head * bh[4];
+	int i;
+
+	for (i=0 ; i<4 ; i++)
+		if (b[i]) {
+			if ((bh[i] = getblk(dev,b[i])))
+				if (!bh[i]->b_uptodate)
+					ll_rw_block(READ,bh[i]);
+		} else
+			bh[i] = NULL;
+	for (i=0 ; i<4 ; i++,address += BLOCK_SIZE)
+		if (bh[i]) {
+			wait_on_buffer(bh[i]);
+			if (bh[i]->b_uptodate)
+				COPYBLK((unsigned long) bh[i]->b_data,address);
+			brelse(bh[i]);
+		}
+}

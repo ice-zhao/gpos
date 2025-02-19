@@ -5,6 +5,7 @@ int printk(const char *fmt, ...);
 
 
 void clear_screen();
+extern int printf(const char *fmt, ...);
 
 
 

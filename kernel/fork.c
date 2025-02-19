@@ -1,3 +1,4 @@
+#include "fs/fs.h"
 #include "string.h"
 #include <kernel/schedule.h>
 #include <errno.h>
@@ -58,6 +59,7 @@ int copy_process(int nr,long ebp,long edi,long esi,long gs,long none,
 		long eip,long cs,long eflags,long esp,long ss)
 {
 	struct task_struct *p;
+	struct file * f = NULL;
 	int i;
 
 	p = (struct task_struct *) get_free_page();
@@ -98,19 +100,19 @@ int copy_process(int nr,long ebp,long edi,long esi,long gs,long none,
 	/* 	__asm__("clts ; fnsave %0"::"m" (p->tss.i387)); */
 	if (copy_mem(nr,p)) {
 		task[nr] = NULL;
-		/* free_page((long) p); */
+		free_page((long) p);
 		return -EAGAIN;
 	}
 
-	/* for (i=0; i<NR_OPEN;i++) */
-	/* 	if ((f=p->filp[i])) */
-	/* 		f->f_count++; */
-	/* if (current->pwd) */
-	/* 	current->pwd->i_count++; */
-	/* if (current->root) */
-	/* 	current->root->i_count++; */
-	/* if (current->executable) */
-	/* 	current->executable->i_count++; */
+	for (i=0; i<NR_OPEN;i++)
+		if ((f=p->filp[i]))
+			f->f_count++;
+	if (current->pwd)
+		current->pwd->i_count++;
+	if (current->root)
+		current->root->i_count++;
+	if (current->executable)
+		current->executable->i_count++;
 	set_tss_desc((struct desc_struct *)&gdt+(nr<<1)+FIRST_TSS_ENTRY,&(p->tss));
 	set_ldt_desc((struct desc_struct *)&gdt+(nr<<1)+FIRST_LDT_ENTRY,&(p->ldt));
 	p->state = TASK_RUNNING;	/* do this last, just in case */

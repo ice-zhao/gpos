@@ -72,3 +72,6 @@ lab/
 **/**/*.asm
 .cache/
 compile_commands.json
+**/*.dasm
+apps/bin/hello
+

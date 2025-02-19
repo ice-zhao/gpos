@@ -74,10 +74,15 @@ struct task_struct {
 	unsigned short umask;
 	struct m_inode * pwd;
 	struct m_inode * root;
+	struct m_inode * executable;	/* executable file */
     unsigned long close_on_exec;
 	unsigned short uid,euid,suid;
 	unsigned short gid,egid,sgid;
     struct file * filp[NR_OPEN];
+
+	/* sys_execve take care of these */
+	int exit_code;
+	unsigned long start_code,end_code,end_data,brk,start_stack;
 
 /* ldt for this task 0 - zero 1 - cs 2 - ds&ss */
 	struct desc_struct ldt[3];
@@ -88,15 +93,17 @@ struct task_struct {
 
 /*
  *  INIT_TASK is used to set up the first task table.
+	tty : -1 if no tty
  */
 #define INIT_TASK {\
     0,15,   /* state, counter */ \
-    15,0,-1,0,0,0,-1,0, /* priority, pid, father, pgrp, session, leader, tty, umask */  \
-    0,0, /* pwd, root */  \
+    15,0,-1,0,0,0,-1,0022, /* priority, pid, father, pgrp, session, leader, tty, umask */  \
+	NULL,NULL,NULL, /* pwd, root, executable */				\
     0, /* close_on_exec  */                 \
     0,0,0, /* uid,euid,suid  */             \
     0,0,0, /* gid,egid,sgid  */             \
     {NULL,}, /* filp */                     \
+	0,0,0,0,0,0,  /* exit_code, start_code, end_code, end_data, brk, start_stack */ \
     {\
         {0,0}, \
 /* ldt */	{0x3FFF,0xc0fa00},        /*code segment, DPL:3, G:1,D/B:1-32bit S:1-code/data; 0x3FFF(64M space)*/ \

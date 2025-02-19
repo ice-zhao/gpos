@@ -1,3 +1,4 @@
+#include "kernel/schedule.h"
 #include <print.h>
 #include <kernel/head.h>
 #include <kernel/mm_types.h>
@@ -84,7 +85,7 @@ int copy_page_tables(unsigned long from,unsigned long to,long size)
 			this_page = *from_page_table;
 			if (!(1 & this_page))	/* page not present */
 				continue;
-			this_page &= ~2;  //for COW
+			this_page &= ~PTE_WRITE;  //for COW
 			*to_page_table = this_page;
 
 			if (this_page >= LOW_MEM) {
@@ -95,6 +96,168 @@ int copy_page_tables(unsigned long from,unsigned long to,long size)
 	}
 	invalidate();
 	return 0;
+}
+
+/*
+ * This function puts a page in memory at the wanted address.
+ * It returns the physical address of the page gotten, 0 if
+ * out of memory (either when trying to access page-table or
+ * page.)
+ */
+unsigned long put_page(unsigned long page,unsigned long address)
+{
+	unsigned long *page_table;
+	unsigned long free_page;
+	pde_t *pg_dir_entry = NULL;
+
+/* NOTE !!! This uses the fact that _pg_dir=0 */
+
+	if (page < LOW_MEM || page >= HIGH_MEMORY)
+		printk("Trying to put page %p at %p\n",page,address);
+	if (mms_page(page)->_refcount != 1)
+		printk("mem_map disagrees with %p at %p\n",page,address);
+	pg_dir_entry = pde(address);
+	if ((*pg_dir_entry) & PDE_PRESENT)
+		page_table = page_table_from(pg_dir_entry);
+	else {
+		if (!(free_page=get_free_page()))
+			return 0;
+		*pg_dir_entry = free_page | PDE_UWP;
+		page_table = (unsigned long *) free_page;
+	}
+	page_table[page_idx(address)] = page | PTE_UWP;
+/* no need for invalidate */
+	return page;
+}
+
+void get_empty_page(unsigned long address)
+{
+	unsigned long tmp;
+
+	if (!(tmp=get_free_page()) || !put_page(tmp,address)) {
+		free_page(tmp);		/* 0 is ok - ignored */
+		/* oom(); */
+	}
+}
+
+/*
+ * try_to_share() checks the page at address "address" in the task "p",
+ * to see if it exists, and if it is clean. If so, share it with the current
+ * task.
+ *
+ * NOTE! This assumes we have checked that p != current, and that they
+ * share the same executable.
+ */
+static int try_to_share(unsigned long address, struct task_struct * p)
+{
+	unsigned long from;
+	unsigned long to;
+	pte_t * from_page;
+	pte_t * to_page;
+	unsigned long phys_addr;
+
+	unsigned long code_pos;
+	pde_t * from_pg_dir_entry = NULL;
+	unsigned long * from_pg_table = NULL;
+
+	pde_t * to_pg_dir_entry = NULL;
+
+	code_pos = p->start_code + address;
+	from_pg_dir_entry = pde(code_pos);
+	/* is there a page-directory at from? */
+	if (!(*from_pg_dir_entry & PDE_PRESENT))
+		return 0;
+
+	from_page = pte(code_pos);
+/* is the page clean and present? */
+	if ((*from_page & (PTE_DIRTY | PTE_PRESENT)) != PTE_PRESENT)	/* dirty and present attribute. */
+		return 0;
+	phys_addr = page_from(from_page);
+	if (phys_addr >= HIGH_MEMORY || phys_addr < LOW_MEM)
+		return 0;
+
+	code_pos = current->start_code + address;
+	to_pg_dir_entry = pde(code_pos);
+	if (!(*to_pg_dir_entry & PDE_PRESENT)) {
+		if ((to = get_free_page()))
+			*to_pg_dir_entry = to | PDE_UWP;
+		/* else */
+		/* 	oom(); */
+	}
+
+	to_page = pte(code_pos);
+	if (PTE_PRESENT & *to_page)
+		panic("try_to_share: to_page already exists");
+/* share them: write-protect */
+	*from_page &= ~PTE_WRITE;
+	*to_page = *from_page;
+	invalidate();
+	set_mem_map(phys_addr);
+	return 1;
+}
+
+/*
+ * share_page() tries to find a process that could share a page with
+ * the current one. Address is the address of the wanted page relative
+ * to the current data space.
+ *
+ * We first check if it is at all feasible by checking executable->i_count.
+ * It should be >1 if there are other tasks sharing this inode.
+ */
+static int share_page(unsigned long address)
+{
+	struct task_struct ** p;
+
+	if (!current->executable)
+		return 0;
+	if (current->executable->i_count < 2)
+		return 0;
+	for (p = &LAST_TASK ; p > &FIRST_TASK ; --p) {
+		if (!*p)
+			continue;
+		if (current == *p)
+			continue;
+		if ((*p)->executable != current->executable)
+			continue;
+		if (try_to_share(address,*p))
+			return 1;
+	}
+	return 0;
+}
+
+void do_no_page(unsigned long error_code,unsigned long address)
+{
+	int nr[4];
+	unsigned long image_offset;
+	unsigned long page;
+	int block,i;
+
+	address &= 0xfffff000;
+	image_offset = address - current->start_code;
+	if (!current->executable || image_offset >= current->end_data) {
+		get_empty_page(address);
+		return;
+	}
+	if (share_page(image_offset))
+		return;
+	if (!(page = get_free_page()))
+		panic("do_no_page: out of memory! \n");
+		/* oom(); */
+/* remember that 1 block is used for header */
+	block = 1 + image_offset/BLOCK_SIZE;
+	for (i=0 ; i<4 ; block++,i++)
+		nr[i] = bmap(current->executable,block);
+	bread_page(page,current->executable->i_dev,nr);
+	i = image_offset + 4096 - current->end_data;
+	image_offset = page + 4096;
+	while (i-- > 0) {
+		image_offset--;
+		*(char *)image_offset = 0;
+	}
+	if (put_page(page,address))
+		return;
+	free_page(page);
+	/* oom(); */
 }
 
 
@@ -128,8 +291,12 @@ void mm_init(void) {
 
 void set_mem_map(unsigned long addr) {
     struct mm_bitpos bp;
+	int error = 0;
+
     addr &= 0xfffff000;
-    if(!get_bitpos(addr, &bp)) {
+	error = get_bitpos(addr, &bp);
+
+	if(!error) {
         mem_map[bp.pos] |= (1<<bp.idx);
         mms_page(addr)->_refcount++;
     }
@@ -137,7 +304,10 @@ void set_mem_map(unsigned long addr) {
 
 void clear_mem_map(unsigned long addr) {
     struct mm_bitpos bp;
-    if(!get_bitpos(addr, &bp)) {
+	int error = 0;
+	error = get_bitpos(addr, &bp);
+
+    if(!error) {
         --mms_page(addr)->_refcount;
         if(mms_page(addr)->_refcount == 0) {
             mem_map[bp.pos] &= ~(1<<bp.idx);
@@ -180,13 +350,16 @@ unsigned long get_free_page(void)
     return addr;
 }
 
+/* unlock write protection page
+   if the page table entry is used by multiple processes, allocate a new page.
+ */
 void un_wp_page(unsigned long * page_table_entry)
 {
 	unsigned long old_page,new_page;
 
-	old_page = 0xfffff000 & *page_table_entry;
+	old_page = page_from(page_table_entry);
 	if (old_page >= LOW_MEM && mms_page(old_page)->_refcount ==1) {
-		*page_table_entry |= 2;
+		*page_table_entry |= PTE_WRITE;
 		invalidate();
         return;
 	}
@@ -214,5 +387,5 @@ void un_wp_page(unsigned long * page_table_entry)
  */
 void do_wp_page(unsigned long error_code,unsigned long address)
 {
-	un_wp_page(pte_ptr(address));
+	un_wp_page(pte(address));
 }

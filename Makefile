@@ -33,6 +33,13 @@ kernel:
 	make all -C ./fs
 	make all -C ./arch/x86
 
+apps:
+	make all -C ./apps
+
+apps_clean:
+	make clean -C ./apps
+
+
 install: install_bootloader install_kernel
 
 #install kernel to floppy
@@ -57,4 +64,4 @@ clean:
 	make clean -C ./fs
 	make clean -C ./bootloader/x86
 
-.PHONY: bootloader kernel install clean install_kernel install_bootloader
+.PHONY: bootloader kernel install clean install_kernel install_bootloader apps apps_clean
